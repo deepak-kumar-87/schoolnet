@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ramgarh Sahayak AI – Community Well-being &amp; Environmental Action Platform</title>
+<meta name="description" content="Community prototype for Ramgarh district, Jharkhand: report civic and environmental issues, find official resources and ask the demo assistant. Not an official government website.">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --green:#14532d; --green-2:#166534; --teal:#0f766e; --blue:#1d4ed8; --ink:#1f2937; --muted:#4b5563;
+  --bg:#f3f5f7; --card:#ffffff; --line:#e2e8f0; --sidebar-w:272px;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"Segoe UI","Noto Sans","Noto Sans Devanagari",system-ui,-apple-system,Roboto,Arial,sans-serif;line-height:1.55}
+[hidden]{display:none!important}
+.skip-link{position:absolute;left:-999px;top:8px;background:#fff;color:#000;padding:8px 14px;border-radius:8px;z-index:3000}
+.skip-link:focus{left:8px}
+:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+.app{min-height:100vh}
+/* Sidebar */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:linear-gradient(180deg,#0b3d2e 0%,#134e4a 100%);color:#e6f4ef;display:flex;flex-direction:column;z-index:1040;transition:transform .25s ease;overflow-y:auto}
+.brand{padding:18px 18px 12px;border-bottom:1px solid rgba(255,255,255,.12)}
+.brand-mark{display:flex;align-items:center;gap:10px}
+.brand-mark .logo{width:42px;height:42px;border-radius:12px;background:#fff;color:var(--green);display:grid;place-items:center;font-size:1.4rem;flex:0 0 auto}
+.brand-name{font-weight:700;font-size:1.05rem;line-height:1.2;color:#fff}
+.brand-sub{font-size:.72rem;opacity:.85}
+.sidebar nav{padding:10px 10px;flex:1}
+.sidebar nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;margin:2px 0;border-radius:10px;color:#e6f4ef;text-decoration:none;font-size:.95rem}
+.sidebar nav a:hover{background:rgba(255,255,255,.1)}
+.sidebar nav a.active{background:#fff;color:var(--green);font-weight:600}
+.sidebar nav a i{font-size:1.1rem;width:22px;text-align:center}
+.sidebar-foot{padding:12px 16px;font-size:.74rem;opacity:.85;border-top:1px solid rgba(255,255,255,.12)}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1035}
+.content{margin-left:var(--sidebar-w);min-width:0}
+.topbar{position:sticky;top:0;z-index:1020;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:8px 16px;display:flex;align-items:center;gap:12px}
+.topbar .page-name{font-weight:600;color:var(--green);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lang-toggle .btn{padding:.25rem .7rem;font-size:.85rem}
+.menu-btn{display:none}
+.disclaimer-bar{background:#fff7e6;border-bottom:1px solid #fde1a3;color:#7c4a03;font-size:.82rem;padding:6px 16px}
+main{padding:18px 16px 90px;max-width:1280px;margin:0 auto;outline:none}
+@media (max-width:991.98px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:none;box-shadow:0 0 30px rgba(0,0,0,.35)}
+  .sb-overlay.open{display:block}
+  .content{margin-left:0}
+  .menu-btn{display:inline-flex}
+}
+/* Cards */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:16px}
+.hero{background:linear-gradient(120deg,#14532d 0%,#0f766e 60%,#1d4ed8 120%);color:#fff;border-radius:18px;padding:22px 24px;margin-bottom:16px;position:relative;overflow:hidden}
+.hero h1{font-size:1.55rem;font-weight:700;margin-bottom:4px}
+.hero .tag{font-size:1.1rem;font-weight:600;color:#fde68a}
+.hero p{margin-bottom:0;opacity:.95}
+.hero .badge-demo{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);font-weight:500}
+.stat-card{background:#fff;border:1px solid var(--line);border-left:5px solid var(--accent,#0f766e);border-radius:14px;padding:12px 14px;height:100%;box-shadow:0 1px 3px rgba(15,23,42,.05);position:relative}
+.stat-card>i{position:absolute;right:12px;top:10px;font-size:1.3rem;color:var(--accent);opacity:.8}
+.stat-val{font-size:1.9rem;font-weight:700;line-height:1.1;color:#111827}
+.stat-val.stat-text{font-size:1rem;line-height:1.3;padding-right:24px;min-height:2.4rem}
+.stat-label{font-size:.82rem;color:var(--muted)}
+.stat-sub{font-size:.75rem;color:var(--muted)}
+.cat-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;height:100%;display:flex;flex-direction:column;gap:6px;transition:box-shadow .15s,transform .15s}
+.cat-card:hover{box-shadow:0 6px 16px rgba(15,23,42,.1);transform:translateY(-2px)}
+.cat-ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:1.25rem;flex:0 0 auto}
+.cat-card h3{font-size:.98rem;font-weight:650;margin:0}
+.cat-card p{font-size:.84rem;color:var(--muted);margin:0;flex:1}
+.cat-actions{display:flex;gap:6px;flex-wrap:wrap}
+.section-title{font-size:1.15rem;font-weight:650;color:var(--green);margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+.filter-bar{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:14px}
+.filter-bar label{font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:2px}
+.badge-status{color:#fff;font-weight:600;padding:.35em .6em;border-radius:999px;font-size:.74rem;white-space:nowrap}
+.badge-demo-tag{background:#e0f2fe;color:#075985;border:1px solid #bae6fd;font-size:.68rem;padding:.15em .5em;border-radius:6px;font-weight:600}
+.badge-local-tag{background:#ecfccb;color:#3f6212;border:1px solid #d9f99d;font-size:.68rem;padding:.15em .5em;border-radius:6px;font-weight:600}
+#map{height:560px;border-radius:14px;border:1px solid var(--line);z-index:1}
+@media (max-width:575.98px){#map{height:420px}}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:.82rem;margin:3px 0}
+.legend-dot{width:14px;height:14px;border-radius:50%;flex:0 0 auto}
+.chart-box{position:relative;height:290px}
+.chart-empty{display:grid;place-items:center;height:290px;text-align:center;color:var(--muted);background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;padding:14px}
+.table thead th{font-size:.8rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);white-space:nowrap}
+.table td{vertical-align:middle;font-size:.9rem}
+.timeline{list-style:none;padding-left:0;margin:0;border-left:3px solid #cbd5e1;margin-left:6px}
+.timeline li{position:relative;padding:0 0 14px 16px}
+.timeline li::before{content:"";position:absolute;left:-9px;top:4px;width:15px;height:15px;border-radius:50%;background:var(--dot,#64748b);border:3px solid #fff;box-shadow:0 0 0 1px #cbd5e1}
+.res-card{height:100%;display:flex;flex-direction:column;gap:6px}
+.res-card h3{font-size:1rem;margin:0;font-weight:650}
+.aw-card{height:100%;display:flex;flex-direction:column;gap:8px}
+.aw-card .form-check{font-size:.88rem}
+.progress{height:8px}
+.queue-item{width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;margin-bottom:6px;display:block}
+.queue-item:hover,.queue-item.active{border-color:var(--teal);background:#f0fdfa}
+.help-steps li{margin-bottom:4px}
+/* Chatbot */
+.chat-fab{position:fixed;right:18px;bottom:18px;z-index:1050;width:62px;height:62px;border-radius:50%;border:0;background:linear-gradient(135deg,#0f766e,#14532d);color:#fff;font-size:1.7rem;box-shadow:0 8px 22px rgba(0,0,0,.28);display:grid;place-items:center}
+.chat-fab:hover{transform:scale(1.05)}
+.chat-panel{position:fixed;right:18px;bottom:92px;width:392px;max-width:calc(100vw - 24px);height:600px;max-height:calc(100vh - 110px);background:#fff;border-radius:18px;border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.28);z-index:1060;display:none;flex-direction:column;overflow:hidden}
+.chat-panel.open{display:flex;animation:pop .18s ease}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.chat-head{background:linear-gradient(120deg,#0b3d2e,#0f766e);color:#fff;padding:10px 12px;display:flex;align-items:center;gap:10px}
+.chat-head .av{width:38px;height:38px;border-radius:50%;background:#fff;color:var(--green);display:grid;place-items:center;font-size:1.2rem}
+.chat-head .t{font-weight:700;line-height:1.1}
+.chat-head .s{font-size:.72rem;opacity:.9}
+.chat-note{font-size:.72rem;background:#fff7e6;color:#7c4a03;padding:5px 10px;border-bottom:1px solid #fde1a3}
+.chat-body{flex:1;overflow-y:auto;padding:12px;background:#f6f8fa}
+.msg{max-width:88%;margin-bottom:10px;padding:9px 12px;border-radius:14px;font-size:.9rem;word-wrap:break-word}
+.msg.bot{background:#fff;border:1px solid var(--line);border-top-left-radius:4px}
+.msg.user{background:#0f766e;color:#fff;margin-left:auto;border-top-right-radius:4px}
+.msg .ln{margin:0 0 3px}
+.msg .src{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+.msg .src a{font-size:.75rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:999px;padding:2px 9px;text-decoration:none;color:#1e40af}
+.typing{display:inline-flex;gap:4px;padding:4px 2px}
+.typing span{width:7px;height:7px;background:#94a3b8;border-radius:50%;animation:blink 1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.chat-sugg{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;border-top:1px solid var(--line);background:#fff;white-space:nowrap}
+.chat-sugg button{flex:0 0 auto;font-size:.76rem;border:1px solid #99f6e4;background:#f0fdfa;color:#0f5f58;border-radius:999px;padding:3px 10px}
+.chat-foot{padding:8px 10px;border-top:1px solid var(--line);background:#fff}
+@media (max-width:575.98px){.chat-panel{right:8px;left:8px;bottom:84px;width:auto;max-width:none;height:calc(100vh - 100px)}}
+#toasts{position:fixed;left:16px;bottom:16px;z-index:2000;display:flex;flex-direction:column;gap:8px;max-width:calc(100vw - 100px)}
+.toast-x{background:#111827;color:#fff;padding:10px 14px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.3);font-size:.9rem;animation:pop .18s ease}
+.toast-x.ok{background:#166534}.toast-x.err{background:#991b1b}
+#loader{position:fixed;inset:0;background:#fff;z-index:3000;display:grid;place-items:center;text-align:center}
+.leaflet-popup-content{font-size:.85rem}
+.footer-note{font-size:.78rem;color:var(--muted);margin-top:22px;border-top:1px solid var(--line);padding-top:12px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main" data-i18n="skip">Skip to main content</a>
+
+<div id="loader" role="status" aria-live="polite">
+  <div>
+    <div class="spinner-border text-success mb-2" aria-hidden="true"></div>
+    <div><strong>Ramgarh Sahayak AI</strong></div>
+    <div class="small text-muted">Loading… / लोड हो रहा है…</div>
+  </div>
+</div>
+
+<div class="app">
+  <aside id="sidebar" class="sidebar" aria-label="Main navigation">
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="logo" aria-hidden="true"><i class="bi bi-tree-fill"></i></div>
+        <div>
+          <div class="brand-name">Ramgarh Sahayak AI</div>
+          <div class="brand-sub">Community Well-being &amp; Environmental Action Platform</div>
+        </div>
+      </div>
+    </div>
+    <nav>
+      <a href="#dashboard" data-view="dashboard"><i class="bi bi-speedometer2" aria-hidden="true"></i><span data-i18n="nav_dashboard">Dashboard</span></a>
+      <a href="#map" data-view="map"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i><span data-i18n="nav_map">Issue Map</span></a>
+      <a href="#report" data-view="report"><i class="bi bi-pencil-square" aria-hidden="true"></i><span data-i18n="nav_report">Report an Issue</span></a>
+      <a href="#track" data-view="track"><i class="bi bi-search" aria-hidden="true"></i><span data-i18n="nav_track">Track a Report</span></a>
+      <a href="#reports" data-view="reports"><i class="bi bi-table" aria-hidden="true"></i><span data-i18n="nav_reports">All Reports</span></a>
+      <a href="#analytics" data-view="analytics"><i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i><span data-i18n="nav_analytics">Analytics</span></a>
+      <a href="#resources" data-view="resources"><i class="bi bi-journal-bookmark-fill" aria-hidden="true"></i><span data-i18n="nav_resources">Resource Centre</span></a>
+      <a href="#awareness" data-view="awareness"><i class="bi bi-flower2" aria-hidden="true"></i><span data-i18n="nav_awareness">Awareness Centre</span></a>
+      <a href="#admin" data-view="admin"><i class="bi bi-shield-lock-fill" aria-hidden="true"></i><span data-i18n="nav_admin">Admin (Demo)</span></a>
+    </nav>
+    <div class="sidebar-foot" data-i18n="sb_foot">Community prototype. Not an official government website.</div>
+  </aside>
+  <div id="overlay" class="sb-overlay"></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button type="button" id="menuBtn" class="btn btn-outline-secondary menu-btn" aria-label="Open navigation menu" aria-controls="sidebar" aria-expanded="false"><i class="bi bi-list" aria-hidden="true"></i></button>
+      <div class="page-name" id="pageName">Dashboard</div>
+      <div class="btn-group lang-toggle" role="group" aria-label="Language / भाषा">
+        <button type="button" class="btn btn-outline-success" id="langEn" aria-pressed="true">EN</button>
+        <button type="button" class="btn btn-outline-success" id="langHi" aria-pressed="false" lang="hi">हिंदी</button>
+      </div>
+    </header>
+    <div class="disclaimer-bar" role="note"><i class="bi bi-info-circle" aria-hidden="true"></i> <span data-i18n="disc_bar">Community prototype – not an official government website. Sample records are demonstration data. This platform does not replace emergency services.</span></div>
+
+    <main id="main" tabindex="-1">
+      <div id="libWarn" class="alert alert-warning" hidden></div>
+      <div id="storageWarn" class="alert alert-danger" hidden></div>
+
+      <!-- Shared filter bar -->
+      <section id="filterBar" class="filter-bar" aria-label="Filters" hidden>
+        <div class="row g-2 align-items-end">
+          <div class="col-6 col-md-3 col-xl-2"><label for="fl-block" data-i18n="f_block">Block</label><select id="fl-block" class="form-select form-select-sm"></select></div>
+          <div class="col-6 col-md-3 col-xl-2"><label for="fl-village" data-i18n="f_village">Village / Ward</label><input id="fl-village" type="search" class="form-control form-control-sm" maxlength="60" data-i18n-ph="f_village_ph" placeholder="Type to search"></div>
+          <div class="col-6 col-md-3 col-xl-2"><label for="fl-cat" data-i18n="f_category">Issue category</label><select id="fl-cat" class="form-select form-select-sm"></select></div>
+          <div class="col-6 col-md-3 col-xl-2"><label for="fl-status" data-i18n="f_status">Status</label><select id="fl-status" class="form-select form-select-sm"></select></div>
+          <div class="col-6 col-md-3 col-xl-1"><label for="fl-from" data-i18n="f_from">From</label><input id="fl-from" type="date" class="form-control form-control-sm"></div>
+          <div class="col-6 col-md-3 col-xl-1"><label for="fl-to" data-i18n="f_to">To</label><input id="fl-to" type="date" class="form-control form-control-sm"></div>
+          <div class="col-12 col-xl-2 d-flex gap-2 align-items-end">
+            <button type="button" id="fl-reset" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> <span data-i18n="f_reset">Reset filters</span></button>
+            <span class="small text-muted" id="fl-count" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="small text-muted mt-1" data-i18n="f_note">Date range filters by submission date.</div>
+      </section>
+
+      <!-- DASHBOARD -->
+      <section id="view-dashboard" class="view" aria-labelledby="h-dashboard">
+        <div class="hero">
+          <h1 id="h-dashboard" data-i18n="dash_title">Community Well-being Dashboard – Ramgarh District</h1>
+          <div class="tag" lang="hi">हर समस्या की जानकारी, समाधान की सही राह।</div>
+          <p class="mt-1" data-i18n="dash_intro">Report local civic and environmental issues, find official guidance, learn about environmental protection and ask the demo assistant.</p>
+          <div class="mt-2"><span class="badge badge-demo"><i class="bi bi-database" aria-hidden="true"></i> <span data-i18n="demo_badge">Demonstration data – not official statistics</span></span></div>
+        </div>
+
+        <div id="helpBox" class="alert alert-info alert-dismissible" role="region" aria-label="Instructions">
+          <h2 class="h6 mb-2"><i class="bi bi-lightbulb" aria-hidden="true"></i> <span data-i18n="help_title">How to use this prototype</span></h2>
+          <ol class="mb-1 help-steps">
+            <li data-i18n="help_1">Explore the dashboard, map and charts. All current records are labelled demonstration data.</li>
+            <li data-i18n="help_2">Use “Report an Issue” to create a report. You get a reference number such as RSA-2026-00001.</li>
+            <li data-i18n="help_3">Use “Track a Report” (or ask the chatbot) with your reference number to see its status history.</li>
+            <li data-i18n="help_4">Reports are saved only in this browser (localStorage). They are not sent to any government department or other residents.</li>
+            <li data-i18n="help_5">The chat button at the bottom-right opens the demo assistant. It uses simple local keyword rules, not a generative AI model.</li>
+          </ol>
+          <button type="button" class="btn-close" id="helpClose" aria-label="Dismiss instructions"></button>
+        </div>
+
+        <div class="row g-3" id="summaryCards" aria-live="polite"></div>
+        <p class="small text-muted mt-2 mb-0" id="summaryNote"></p>
+
+        <h2 class="section-title"><i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i><span data-i18n="cat_title">Community issue categories</span></h2>
+        <div class="row g-3" id="categoryGrid"></div>
+
+        <h2 class="section-title"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i><span data-i18n="top_title">Most reported issues (current filters)</span></h2>
+        <div class="panel" id="topIssues"></div>
+      </section>
+
+      <!-- MAP -->
+      <section id="view-map" class="view" aria-labelledby="h-map" hidden>
+        <h1 class="h4 text-success" id="h-map" data-i18n="map_title">Issue Map – Ramgarh District</h1>
+        <div class="alert alert-warning py-2 small" role="note"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i> <span data-i18n="map_note">Markers use approximate, clearly labelled reference locations (block-level points or an approximate location entered by the reporter). They are NOT exact incident locations, and no real monitoring stations or verified incidents are shown.</span></div>
+        <div class="row g-3">
+          <div class="col-lg-9">
+            <div id="map" role="application" aria-label="Map of reported issues"></div>
+            <div id="mapErr" class="alert alert-danger mt-2" hidden></div>
+          </div>
+          <div class="col-lg-3">
+            <div class="panel">
+              <h2 class="h6" data-i18n="map_legend">Legend</h2>
+              <div class="small text-muted mb-2" data-i18n="map_legend_note">Fill colour = issue category. Outline colour = report status.</div>
+              <div id="legendCats"></div>
+              <hr>
+              <div id="legendStatus"></div>
+              <hr>
+              <div class="small" id="mapCount" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORT FORM -->
+      <section id="view-report" class="view" aria-labelledby="h-report" hidden>
+        <h1 class="h4 text-success" id="h-report" data-i18n="r_title">Report a community issue</h1>
+        <p class="text-muted" data-i18n="r_intro">Use this form to create a demonstration report. It is saved only in this browser and is not an official complaint.</p>
+        <div id="doneBox" class="alert alert-success" hidden role="status">
+          <h2 class="h5"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> <span data-i18n="done_title">Report saved in this browser</span></h2>
+          <p class="mb-1"><span data-i18n="done_ref">Your reference number:</span> <strong id="doneRef" class="fs-5"></strong>
+            <button type="button" class="btn btn-sm btn-outline-success ms-2" id="copyRef"><i class="bi bi-clipboard" aria-hidden="true"></i> <span data-i18n="copy">Copy</span></button></p>
+          <p class="small mb-2" data-i18n="done_note">Important: this prototype has NOT delivered your report to any government department. To raise an official complaint, use the official channels in the Resource Centre.</p>
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-success btn-sm" id="doneTrack" data-i18n="done_track">Track this report</button>
+            <button type="button" class="btn btn-outline-success btn-sm" id="doneAnother" data-i18n="done_another">Submit another report</button>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-lg-8">
+            <form id="reportForm" class="panel" novalidate>
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label" for="f-title"><span data-i18n="l_title">Report title</span> <span class="text-danger" aria-hidden="true">*</span></label>
+                  <input id="f-title" class="form-control" maxlength="100" required autocomplete="off">
+                  <div class="invalid-feedback" id="err-title"></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="f-cat"><span data-i18n="l_cat">Issue category</span> <span class="text-danger" aria-hidden="true">*</span></label>
+                  <select id="f-cat" class="form-select" required></select>
+                  <div class="invalid-feedback" id="err-cat"></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="f-block"><span data-i18n="l_block">Block</span> <span class="text-danger" aria-hidden="true">*</span></label>
+                  <select id="f-block" class="form-select" required></select>
+                  <div class="invalid-feedback" id="err-block"></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="f-village"><span data-i18n="l_village">Village or ward</span> <span class="text-danger" aria-hidden="true">*</span></label>
+                  <input id="f-village" class="form-control" maxlength="60" required autocomplete="off">
+                  <div class="invalid-feedback" id="err-village"></div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label" for="f-date"><span data-i18n="l_date">Incident date</span> <span class="text-danger" aria-hidden="true">*</span></label>
+                  <input id="f-date" type="date" class="form-control" required>
+                  <div class="invalid-feedback" id="err-date"></div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="f-desc"><span data-i18n="l_desc">Description</span> <span class="text-danger" aria-hidden="true">*</span></label>
+                  <textarea id="f-desc" class="form-control" rows="4" maxlength="1000" required></textarea>
+                  <div class="d-flex justify-content-between"><div class="invalid-feedback d-block" id="err-desc"></div><small class="text-muted" id="descCount">0/1000</small></div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="f-photo"><span data-i18n="l_photo">Photograph (optional)</span></label>
+                  <input id="f-photo" type="file" class="form-control" accept="image/jpeg,image/png,image/webp">
+                  <div class="form-text" data-i18n="l_photo_hint">JPG, PNG or WebP, up to 2 MB. Only the file name is kept in this demo. Do not photograph people's faces or private documents.</div>
+                  <div class="invalid-feedback" id="err-photo"></div>
+                  <img id="photoPreview" class="img-thumbnail mt-2" alt="Preview of the selected photograph" style="max-height:140px" hidden>
+                </div>
+                <div class="col-12">
+                  <fieldset class="border rounded-3 p-3">
+                    <legend class="float-none w-auto fs-6 px-2 mb-0" data-i18n="l_loc">Approximate location (optional)</legend>
+                    <div class="row g-2 align-items-end">
+                      <div class="col-6 col-md-3"><label class="form-label small" for="f-lat" data-i18n="l_lat">Latitude</label><input id="f-lat" class="form-control form-control-sm" inputmode="decimal" placeholder="e.g. 23.630"></div>
+                      <div class="col-6 col-md-3"><label class="form-label small" for="f-lng" data-i18n="l_lng">Longitude</label><input id="f-lng" class="form-control form-control-sm" inputmode="decimal" placeholder="e.g. 85.520"></div>
+                      <div class="col-12 col-md-6"><button type="button" id="geoBtn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-crosshair" aria-hidden="true"></i> <span data-i18n="l_geo">Use my current location</span></button></div>
+                    </div>
+                    <div class="invalid-feedback d-block" id="err-loc"></div>
+                    <div class="form-text" data-i18n="l_loc_hint">Coordinates are rounded to about 100 m and shown on the map as an approximate location. Leave blank to use the block reference point.</div>
+                  </fieldset>
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="f-contact"><span data-i18n="l_contact">Contact details (optional)</span></label>
+                  <input id="f-contact" class="form-control" maxlength="80" autocomplete="off" placeholder="10-digit mobile number or email">
+                  <div class="form-text" data-i18n="l_contact_hint">Optional. Never shown in public views or CSV exports. Visible only in the demo admin view.</div>
+                  <div class="invalid-feedback" id="err-contact"></div>
+                </div>
+                <div class="col-12 d-flex gap-2 flex-wrap">
+                  <button type="submit" class="btn btn-success"><i class="bi bi-eye" aria-hidden="true"></i> <span data-i18n="btn_preview">Preview &amp; submit</span></button>
+                  <button type="button" id="formClear" class="btn btn-outline-secondary" data-i18n="btn_clear">Clear form</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="col-lg-4">
+            <div class="panel">
+              <h2 class="h6"><i class="bi bi-shield-check" aria-hidden="true"></i> <span data-i18n="privacy_title">Privacy and safety</span></h2>
+              <ul class="small ps-3 mb-0">
+                <li data-i18n="privacy_1">Do not enter Aadhaar, bank, health or other sensitive personal information.</li>
+                <li data-i18n="privacy_2">Stay safe: do not enter dangerous areas, damaged electrical lines or fires to take photographs.</li>
+                <li data-i18n="privacy_3">This form does not call emergency services. In an emergency contact your local emergency services immediately.</li>
+                <li data-i18n="privacy_4">Data stays in this browser's localStorage. It is not shared with officials or other residents.</li>
+                <li data-i18n="privacy_5">An unverified report is not an official complaint or confirmed government action.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TRACK -->
+      <section id="view-track" class="view" aria-labelledby="h-track" hidden>
+        <h1 class="h4 text-success" id="h-track" data-i18n="tr_title">Track a report by reference number</h1>
+        <p class="text-muted" data-i18n="tr_intro">Enter a reference number such as RSA-2026-00001. Only reports stored in this browser can be found.</p>
+        <form id="trackForm" class="panel mb-3" novalidate>
+          <div class="row g-2 align-items-end">
+            <div class="col-md-8"><label class="form-label" for="trackInput" data-i18n="tr_label">Reference number</label><input id="trackInput" class="form-control" maxlength="20" placeholder="RSA-2026-00001" autocomplete="off"></div>
+            <div class="col-md-4"><button class="btn btn-success w-100" type="submit"><i class="bi bi-search" aria-hidden="true"></i> <span data-i18n="tr_btn">Find report</span></button></div>
+          </div>
+        </form>
+        <div id="trackResult" aria-live="polite"></div>
+      </section>
+
+      <!-- REPORTS TABLE -->
+      <section id="view-reports" class="view" aria-labelledby="h-reports" hidden>
+        <h1 class="h4 text-success" id="h-reports" data-i18n="nav_reports">All Reports</h1>
+        <div class="alert alert-secondary py-2 small" role="note" data-i18n="ls_note">Records are stored in this browser (localStorage). They are not shared with government officials or other residents. Contact details are never shown here or exported.</div>
+        <div class="panel">
+          <div class="row g-2 mb-3 align-items-end">
+            <div class="col-md-5"><label class="form-label small" for="tb-search" data-i18n="tb_search">Search by reference ID or title</label><input id="tb-search" type="search" class="form-control" maxlength="80"></div>
+            <div class="col-md-7 d-flex gap-2 flex-wrap justify-content-md-end">
+              <button type="button" id="btnCsv" class="btn btn-outline-success"><i class="bi bi-download" aria-hidden="true"></i> <span data-i18n="export">Export CSV</span></button>
+              <button type="button" id="btnReset" class="btn btn-outline-danger"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> <span data-i18n="reset_demo">Reset demonstration data</span></button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <caption class="visually-hidden" data-i18n="tb_caption">List of community reports</caption>
+              <thead><tr>
+                <th scope="col" data-i18n="th_ref">Reference</th><th scope="col" data-i18n="th_title">Issue title</th><th scope="col" data-i18n="th_cat">Category</th>
+                <th scope="col" data-i18n="th_block">Block</th><th scope="col" data-i18n="th_village">Village / Ward</th><th scope="col" data-i18n="th_date">Submitted</th>
+                <th scope="col" data-i18n="th_status">Status</th><th scope="col"><span class="visually-hidden" data-i18n="th_action">Action</span></th>
+              </tr></thead>
+              <tbody id="tbBody"></tbody>
+            </table>
+          </div>
+          <div id="tbEmpty" class="text-center text-muted py-4" hidden></div>
+          <nav class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2" aria-label="Table pages">
+            <div class="small text-muted" id="tbInfo" aria-live="polite"></div>
+            <div class="btn-group" id="tbPager"></div>
+          </nav>
+        </div>
+      </section>
+
+      <!-- ANALYTICS -->
+      <section id="view-analytics" class="view" aria-labelledby="h-analytics" hidden>
+        <h1 class="h4 text-success" id="h-analytics" data-i18n="a_title">Analytics (demonstration data)</h1>
+        <div class="alert alert-secondary py-2 small" role="note" data-i18n="a_note">Charts are computed from the records stored in this browser and respond to the filters above. They are demonstration data, not real statistics for Ramgarh.</div>
+        <div class="row g-3">
+          <div class="col-lg-6"><div class="panel"><h2 class="h6" data-i18n="a_cat">Reports by category</h2><div class="chart-box"><canvas id="ch-cat" aria-label="Bar chart of reports by category" role="img"></canvas></div><div class="chart-empty" id="em-cat" hidden></div></div></div>
+          <div class="col-lg-6"><div class="panel"><h2 class="h6" data-i18n="a_block">Reports by block</h2><div class="chart-box"><canvas id="ch-block" aria-label="Bar chart of reports by block" role="img"></canvas></div><div class="chart-empty" id="em-block" hidden></div></div></div>
+          <div class="col-lg-6"><div class="panel"><h2 class="h6" data-i18n="a_status">Reports by status</h2><div class="chart-box"><canvas id="ch-status" aria-label="Doughnut chart of reports by status" role="img"></canvas></div><div class="chart-empty" id="em-status" hidden></div></div></div>
+          <div class="col-lg-6"><div class="panel"><h2 class="h6" data-i18n="a_time">Reports over time (weekly)</h2><div class="chart-box"><canvas id="ch-time" aria-label="Line chart of reports over time" role="img"></canvas></div><div class="chart-empty" id="em-time" hidden></div></div></div>
+          <div class="col-12"><div class="panel"><h2 class="h6" data-i18n="a_top">Top reported community issues</h2><div class="chart-box"><canvas id="ch-top" aria-label="Bar chart of the top five reported issues" role="img"></canvas></div><div class="chart-empty" id="em-top" hidden></div></div></div>
+        </div>
+      </section>
+
+      <!-- RESOURCES -->
+      <section id="view-resources" class="view" aria-labelledby="h-resources" hidden>
+        <h1 class="h4 text-success" id="h-resources" data-i18n="res_title">Official Resource Centre</h1>
+        <p class="text-muted" data-i18n="res_intro">Starting references for official information. This prototype could not confirm that every link is currently accessible, so each is labelled as an unverified starting link. Please check the address before relying on a site.</p>
+        <div class="row g-2 mb-3">
+          <div class="col-md-8"><label class="form-label small" for="res-search" data-i18n="res_search">Search resources</label><input id="res-search" type="search" class="form-control" maxlength="80"></div>
+          <div class="col-md-4"><label class="form-label small" for="res-cat" data-i18n="res_cat">Resource category</label><select id="res-cat" class="form-select"></select></div>
+        </div>
+        <div class="row g-3" id="resGrid" aria-live="polite"></div>
+        <div id="resEmpty" class="text-center text-muted py-4" hidden data-i18n="res_empty">No matching resources found. Try a different word.</div>
+      </section>
+
+      <!-- AWARENESS -->
+      <section id="view-awareness" class="view" aria-labelledby="h-awareness" hidden>
+        <h1 class="h4 text-success" id="h-awareness" data-i18n="aw_title">Environmental Awareness Centre</h1>
+        <p class="text-muted" data-i18n="aw_intro">General educational guidance and action checklists. Ticks are saved in this browser only. This is general advice, not medical advice, and no pollution readings are shown.</p>
+        <div class="row g-3" id="awGrid"></div>
+      </section>
+
+      <!-- ADMIN -->
+      <section id="view-admin" class="view" aria-labelledby="h-admin" hidden>
+        <h1 class="h4 text-success" id="h-admin" data-i18n="ad_title">Administrative interface (demo)</h1>
+        <div class="alert alert-danger py-2 small" role="note"><i class="bi bi-exclamation-octagon" aria-hidden="true"></i> <span data-i18n="ad_warn">Demo only: this login runs in your browser and is NOT secure. Anyone can read or bypass it. A real deployment needs server-side authentication and authorization. No real credentials or personal data are used here.</span></div>
+
+        <div id="adminLogin" class="panel" style="max-width:460px">
+          <h2 class="h5" data-i18n="ad_login_title">Demo login</h2>
+          <form id="loginForm" novalidate>
+            <div class="mb-2"><label class="form-label" for="ad-user" data-i18n="ad_user">Username</label><input id="ad-user" class="form-control" autocomplete="off"></div>
+            <div class="mb-2"><label class="form-label" for="ad-pass" data-i18n="ad_pass">Password</label><input id="ad-pass" type="password" class="form-control" autocomplete="off"></div>
+            <div class="small text-muted mb-2" data-i18n="ad_creds">Public demo credentials: username <code>demo</code>, password <code>demo123</code>.</div>
+            <div class="text-danger small mb-2" id="loginErr" role="alert" hidden></div>
+            <button class="btn btn-success" type="submit" data-i18n="ad_login">Sign in</button>
+          </form>
+        </div>
+
+        <div id="adminPanel" hidden>
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h2 class="h5 mb-0" data-i18n="ad_overview">Overview</h2>
+            <button type="button" id="adLogout" class="btn btn-outline-secondary btn-sm"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> <span data-i18n="ad_logout">Sign out</span></button>
+          </div>
+          <div class="row g-3 mb-3" id="adminStats"></div>
+          <div class="row g-3">
+            <div class="col-lg-4">
+              <div class="panel">
+                <h2 class="h6" data-i18n="ad_queue">Review queue</h2>
+                <label class="form-label small" for="ad-qfilter" data-i18n="ad_qfilter">Show</label>
+                <select id="ad-qfilter" class="form-select form-select-sm mb-2"></select>
+                <div id="adminQueue" style="max-height:440px;overflow:auto"></div>
+              </div>
+            </div>
+            <div class="col-lg-8">
+              <div class="panel mb-3" id="adminDetail"><div class="text-muted" data-i18n="ad_select">Select a report from the queue to review it.</div></div>
+              <div class="panel"><h2 class="h6" data-i18n="ad_analytics">Basic analytics – status overview</h2>
+                <div class="chart-box"><canvas id="ch-admin" aria-label="Doughnut chart of report status for administrators" role="img"></canvas></div><div class="chart-empty" id="em-admin" hidden></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <p class="footer-note" data-i18n="footer_note">Ramgarh Sahayak AI is a community prototype and is not an official government website. It is not connected to any government system. Always use official channels for complaints, schemes and emergencies.</p>
+    </main>
+  </div>
+</div>
+
+<!-- Chatbot -->
+<button type="button" class="chat-fab" id="chatFab" aria-label="Open chat assistant" aria-expanded="false" aria-controls="chatPanel"><i class="bi bi-chat-dots-fill" aria-hidden="true"></i></button>
+<section class="chat-panel" id="chatPanel" role="dialog" aria-label="Ramgarh Sahayak AI chat">
+  <div class="chat-head">
+    <div class="av" aria-hidden="true"><i class="bi bi-robot"></i></div>
+    <div class="flex-grow-1"><div class="t">Ramgarh Sahayak AI</div><div class="s" data-i18n="ch_sub">Demo assistant · local response rules</div></div>
+    <button type="button" class="btn btn-sm btn-outline-light" id="chatClear" title="Clear chat" aria-label="Clear chat"><i class="bi bi-trash3" aria-hidden="true"></i></button>
+    <button type="button" class="btn btn-sm btn-light" id="chatClose" aria-label="Close chat"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+  </div>
+  <div class="chat-note" data-i18n="ch_demo">Demo assistant using local keyword rules – not a generative AI model. May be incomplete. Not an official source.</div>
+  <div class="chat-body" id="chatBody" role="log" aria-live="polite" aria-label="Conversation"></div>
+  <div class="chat-sugg" id="chatSugg" aria-label="Suggested questions"></div>
+  <form class="chat-foot" id="chatForm" autocomplete="off">
+    <div class="input-group">
+      <label for="chatInput" class="visually-hidden" data-i18n="ch_ph">Type your question</label>
+      <input id="chatInput" class="form-control" maxlength="300" data-i18n-ph="ch_ph" placeholder="Type your question…">
+      <button class="btn btn-success" type="submit" aria-label="Send"><i class="bi bi-send-fill" aria-hidden="true"></i></button>
+    </div>
+  </form>
+</section>
+
+<!-- Modals -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header"><h2 class="modal-title h5" id="detailTitle" data-i18n="d_title">Report details</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="close">Close</button></div>
+  </div></div>
+</div>
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header"><h2 class="modal-title h5" id="previewTitle" data-i18n="p_title">Preview your report</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body" id="previewBody"></div>
+    <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-i18n="p_edit">Edit</button><button type="button" class="btn btn-success" id="previewConfirm" data-i18n="p_confirm">Confirm and save</button></div>
+  </div></div>
+</div>
+<div class="modal fade" id="resetModal" tabindex="-1" aria-labelledby="resetTitle" aria-hidden="true">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h2 class="modal-title h5" id="resetTitle" data-i18n="rs_title">Reset demonstration data?</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+    <div class="modal-body" data-i18n="rs_body">This deletes every report stored in this browser, including ones you created, and restores the sample demonstration records. This cannot be undone.</div>
+    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="cancel">Cancel</button><button type="button" class="btn btn-danger" id="resetConfirm" data-i18n="rs_confirm">Yes, reset data</button></div>
+  </div></div>
+</div>
+
+<div id="toasts" aria-live="polite" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+'use strict';
+
+/* ======================================================================
+   0. Helpers
+   ====================================================================== */
+const $ = (id) => document.getElementById(id);
+const qsa = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  Object.entries(attrs || {}).forEach(([k, v]) => {
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  });
+  kids.flat().forEach((c) => { if (c == null) return; e.append(c.nodeType ? c : document.createTextNode(String(c))); });
+  return e;
+}
+const libs = { bs: typeof bootstrap !== 'undefined', L: typeof L !== 'undefined', Chart: typeof Chart !== 'undefined' };
+function todayISO() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+function addDays(iso, n) { const d = new Date(iso + 'T09:30:00'); d.setDate(d.getDate() + n); return d; }
+function localISO(d) { const p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':00'; }
+
+/* ======================================================================
+   1. Language dictionary
+   ====================================================================== */
+const I18N = {
+en: {
+  skip: 'Skip to main content', nav_dashboard: 'Dashboard', nav_map: 'Issue Map', nav_report: 'Report an Issue', nav_track: 'Track a Report',
+  nav_reports: 'All Reports', nav_analytics: 'Analytics', nav_resources: 'Resource Centre', nav_awareness: 'Awareness Centre', nav_admin: 'Admin (Demo)',
+  sb_foot: 'Community prototype. Not an official government website.',
+  disc_bar: 'Community prototype – not an official government website. Sample records are demonstration data. This platform does not replace emergency services.',
+  f_block: 'Block', f_village: 'Village / Ward', f_village_ph: 'Type to search', f_category: 'Issue category', f_status: 'Status', f_from: 'From', f_to: 'To',
+  f_reset: 'Reset filters', f_all: 'All', f_note: 'Date range filters by submission date.', f_count: 'reports match',
+  dash_title: 'Community Well-being Dashboard – Ramgarh District',
+  dash_intro: 'Report local civic and environmental issues, find official guidance, learn about environmental protection and ask the demo assistant.',
+  demo_badge: 'Demonstration data – not official statistics',
+  help_title: 'How to use this prototype',
+  help_1: 'Explore the dashboard, map and charts. All current records are labelled demonstration data.',
+  help_2: 'Use “Report an Issue” to create a report. You get a reference number such as RSA-2026-00001.',
+  help_3: 'Use “Track a Report” (or ask the chatbot) with your reference number to see its status history.',
+  help_4: 'Reports are saved only in this browser (localStorage). They are not sent to any government department or other residents.',
+  help_5: 'The chat button at the bottom-right opens the demo assistant. It uses simple local keyword rules, not a generative AI model.',
+  c_total: 'Total community reports', c_new: 'New reports', c_review: 'Under review', c_action: 'Action reported', c_resolved: 'Verified resolved', c_top: 'Most frequently reported issue',
+  c_none: 'No reports yet', c_rejected_note: 'incl. rejected', c_new_sub: 'status: Submitted', c_times: 'reports',
+  summary_note: 'Figures are calculated from the records in this browser that match the current filters. Sample records are demonstration data.',
+  cat_title: 'Community issue categories', cat_report: 'Report', cat_guidance: 'Official guidance', cat_count: 'reports',
+  top_title: 'Most reported issues (current filters)', top_empty: 'No reports match the current filters.',
+  map_title: 'Issue Map – Ramgarh District',
+  map_note: 'Markers use approximate, clearly labelled reference locations (block-level points or an approximate location entered by the reporter). They are NOT exact incident locations, and no real monitoring stations or verified incidents are shown.',
+  map_legend: 'Legend', map_legend_note: 'Fill colour = issue category. Outline colour = report status.', map_shown: 'reports shown on map',
+  map_block_ref: 'Approximate block reference point', map_approx: 'Approximate reference location (block level)', map_user_approx: 'Approximate location entered by reporter',
+  map_err: 'The map library could not be loaded. Please check your internet connection and reload.',
+  map_pop_cat: 'Category', map_pop_loc: 'Location', map_pop_date: 'Reported', map_pop_status: 'Status', map_pop_desc: 'Description',
+  r_title: 'Report a community issue', r_intro: 'Use this form to create a demonstration report. It is saved only in this browser and is not an official complaint.',
+  l_title: 'Report title', l_cat: 'Issue category', l_block: 'Block', l_village: 'Village or ward', l_date: 'Incident date', l_desc: 'Description',
+  l_photo: 'Photograph (optional)', l_photo_hint: 'JPG, PNG or WebP, up to 2 MB. Only the file name is kept in this demo. Do not photograph people\'s faces or private documents.',
+  l_loc: 'Approximate location (optional)', l_lat: 'Latitude', l_lng: 'Longitude', l_geo: 'Use my current location',
+  l_loc_hint: 'Coordinates are rounded to about 100 m and shown on the map as an approximate location. Leave blank to use the block reference point.',
+  l_contact: 'Contact details (optional)', l_contact_hint: 'Optional. Never shown in public views or CSV exports. Visible only in the demo admin view.',
+  l_select: 'Select…', btn_preview: 'Preview & submit', btn_clear: 'Clear form',
+  v_title: 'Enter a title of 5 to 100 characters.', v_cat: 'Choose a category.', v_block: 'Choose a block.', v_village: 'Enter a village or ward (2 to 60 characters).',
+  v_date: 'Choose a valid date that is not in the future.', v_desc: 'Describe the issue in 20 to 1000 characters.', v_photo_type: 'Only JPG, PNG or WebP images are allowed.',
+  v_photo_size: 'The image must be 2 MB or smaller.', v_loc: 'Enter both latitude and longitude inside the Ramgarh area (about 23.2–24.1 N, 85.0–86.0 E).',
+  v_contact: 'Enter a valid 10-digit mobile number or email, or leave blank.', geo_fail: 'Could not read your location. You can type approximate coordinates instead.',
+  privacy_title: 'Privacy and safety',
+  privacy_1: 'Do not enter Aadhaar, bank, health or other sensitive personal information.',
+  privacy_2: 'Stay safe: do not enter dangerous areas, damaged electrical lines or fires to take photographs.',
+  privacy_3: 'This form does not call emergency services. In an emergency contact your local emergency services immediately.',
+  privacy_4: 'Data stays in this browser\'s localStorage. It is not shared with officials or other residents.',
+  privacy_5: 'An unverified report is not an official complaint or confirmed government action.',
+  p_title: 'Preview your report', p_edit: 'Edit', p_confirm: 'Confirm and save', p_photo_name: 'Photo file', p_none: 'None', p_contact_priv: 'Contact (kept private)',
+  done_title: 'Report saved in this browser', done_ref: 'Your reference number:',
+  done_note: 'Important: this prototype has NOT delivered your report to any government department. To raise an official complaint, use the official channels in the Resource Centre.',
+  done_track: 'Track this report', done_another: 'Submit another report', copy: 'Copy', copied: 'Reference copied', save_fail: 'Could not save: browser storage is unavailable or full.',
+  tr_title: 'Track a report by reference number', tr_intro: 'Enter a reference number such as RSA-2026-00001. Only reports stored in this browser can be found.',
+  tr_label: 'Reference number', tr_btn: 'Find report', tr_notfound: 'No report with this reference number exists in this browser.', tr_invalid: 'Enter a reference number in the format RSA-2026-00001.',
+  tb_search: 'Search by reference ID or title', tb_caption: 'List of community reports', th_ref: 'Reference', th_title: 'Issue title', th_cat: 'Category', th_block: 'Block', th_village: 'Village / Ward',
+  th_date: 'Submitted', th_status: 'Status', th_action: 'Action', view: 'View', export: 'Export CSV', reset_demo: 'Reset demonstration data',
+  empty_reports: 'No reports match your search and filters.', prev: 'Previous', next: 'Next', showing: 'Showing', of: 'of', csv_empty: 'There are no reports to export.', csv_done: 'CSV downloaded (contact details excluded).',
+  ls_note: 'Records are stored in this browser (localStorage). They are not shared with government officials or other residents. Contact details are never shown here or exported.',
+  d_title: 'Report details', d_desc: 'Description', d_history: 'Status history', d_incident: 'Incident date', d_submitted: 'Submitted', d_photo: 'Photo file', d_note: 'Resolution note',
+  d_contact: 'Contact (private)', d_loc: 'Map location', d_unverified: 'This report is unverified community input. It is not an official complaint or confirmed government action.',
+  d_demo: 'Demonstration sample', d_local: 'Locally submitted (unverified)', close: 'Close', cancel: 'Cancel', by: 'by',
+  rs_title: 'Reset demonstration data?', rs_body: 'This deletes every report stored in this browser, including ones you created, and restores the sample demonstration records. This cannot be undone.',
+  rs_confirm: 'Yes, reset data', rs_done: 'Demonstration data has been reset.',
+  a_title: 'Analytics (demonstration data)', a_note: 'Charts are computed from the records stored in this browser and respond to the filters above. They are demonstration data, not real statistics for Ramgarh.',
+  a_cat: 'Reports by category', a_block: 'Reports by block', a_status: 'Reports by status', a_time: 'Reports over time (weekly)', a_top: 'Top reported community issues',
+  a_empty: 'Not enough data to draw this chart. Adjust the filters or add reports.', lib_err: 'The chart library could not be loaded. Check your internet connection.', a_reports: 'Reports',
+  res_title: 'Official Resource Centre',
+  res_intro: 'Starting references for official information. This prototype could not confirm that every link is currently accessible, so each is labelled as an unverified starting link. Please check the address before relying on a site.',
+  res_search: 'Search resources', res_cat: 'Resource category', res_empty: 'No matching resources found. Try a different word.', res_visit: 'Visit website', res_org: 'Organisation',
+  res_lastv: 'Last verified', res_notv: 'Not yet verified', res_unv: 'Unverified starting link',
+  aw_title: 'Environmental Awareness Centre',
+  aw_intro: 'General educational guidance and action checklists. Ticks are saved in this browser only. This is general advice, not medical advice, and no pollution readings are shown.',
+  aw_progress: 'done', aw_more: 'Learn more',
+  ad_title: 'Administrative interface (demo)',
+  ad_warn: 'Demo only: this login runs in your browser and is NOT secure. Anyone can read or bypass it. A real deployment needs server-side authentication and authorization. No real credentials or personal data are used here.',
+  ad_login_title: 'Demo login', ad_user: 'Username', ad_pass: 'Password', ad_creds: 'Public demo credentials: username <code>demo</code>, password <code>demo123</code>.',
+  ad_login: 'Sign in', ad_bad: 'Incorrect username or password.', ad_logout: 'Sign out', ad_overview: 'Overview', ad_queue: 'Review queue', ad_qfilter: 'Show',
+  ad_q_open: 'Open (Submitted + Under Review)', ad_q_all: 'All reports', ad_select: 'Select a report from the queue to review it.', ad_status_ctrl: 'Update status',
+  ad_note: 'Resolution / review note', ad_save: 'Save status update', ad_note_req: 'A note of at least 5 characters is required for Verified Resolved or Rejected.',
+  ad_saved: 'Status updated and added to history.', ad_nochange: 'Change the status or add a note first.', ad_analytics: 'Basic analytics – status overview', ad_queue_empty: 'No reports in this view.',
+  ad_denied: 'Sign in to the demo admin interface first.', ad_t_total: 'Total', ad_t_open: 'Awaiting review', ad_t_action: 'Action reported', ad_t_done: 'Verified resolved', ad_t_rej: 'Rejected',
+  ad_verify_hint: '“Verified Resolved” should only be chosen after independent verification. “Action Reported” means action was reported, not independently verified.',
+  footer_note: 'Ramgarh Sahayak AI is a community prototype and is not an official government website. It is not connected to any government system. Always use official channels for complaints, schemes and emergencies.',
+  ch_sub: 'Demo assistant · local response rules', ch_demo: 'Demo assistant using local keyword rules – not a generative AI model. May be incomplete. Not an official source.',
+  ch_ph: 'Type your question…', ch_err: 'Sorry, something went wrong. Please try again, or use the Resource Centre.', ch_sources: 'Sources', ch_report_btn: 'Open report form', ch_view_btn: 'View report details',
+  lang_label: 'Language', storage_err: 'Browser storage is unavailable, so changes will not be saved after you close this page.',
+  lib_warn: 'Some online libraries (Bootstrap, Leaflet or Chart.js) did not load. An internet connection is required for full functionality.',
+  page_dashboard: 'Dashboard', page_map: 'Issue Map', page_report: 'Report an Issue', page_track: 'Track a Report', page_reports: 'All Reports', page_analytics: 'Analytics', page_resources: 'Resource Centre', page_awareness: 'Awareness Centre', page_admin: 'Admin (Demo)'
+},
+hi: {
+  skip: 'मुख्य सामग्री पर जाएँ', nav_dashboard: 'डैशबोर्ड', nav_map: 'समस्या मानचित्र', nav_report: 'समस्या दर्ज करें', nav_track: 'रिपोर्ट ट्रैक करें',
+  nav_reports: 'सभी रिपोर्ट', nav_analytics: 'विश्लेषण', nav_resources: 'संसाधन केंद्र', nav_awareness: 'जागरूकता केंद्र', nav_admin: 'प्रशासन (डेमो)',
+  sb_foot: 'सामुदायिक प्रोटोटाइप। यह सरकारी वेबसाइट नहीं है।',
+  disc_bar: 'सामुदायिक प्रोटोटाइप – यह आधिकारिक सरकारी वेबसाइट नहीं है। नमूना रिकॉर्ड केवल प्रदर्शन हेतु हैं। यह आपातकालीन सेवाओं का विकल्प नहीं है।',
+  f_block: 'प्रखंड', f_village: 'गाँव / वार्ड', f_village_ph: 'खोजने के लिए लिखें', f_category: 'समस्या श्रेणी', f_status: 'स्थिति', f_from: 'से', f_to: 'तक',
+  f_reset: 'फ़िल्टर रीसेट करें', f_all: 'सभी', f_note: 'तिथि सीमा रिपोर्ट जमा करने की तिथि पर लागू होती है।', f_count: 'रिपोर्ट मेल खाती हैं',
+  dash_title: 'सामुदायिक कल्याण डैशबोर्ड – रामगढ़ ज़िला',
+  dash_intro: 'स्थानीय नागरिक व पर्यावरणीय समस्याएँ दर्ज करें, आधिकारिक जानकारी खोजें, पर्यावरण संरक्षण के बारे में जानें और डेमो सहायक से पूछें।',
+  demo_badge: 'प्रदर्शन डेटा – आधिकारिक आँकड़े नहीं',
+  help_title: 'इस प्रोटोटाइप का उपयोग कैसे करें',
+  help_1: 'डैशबोर्ड, मानचित्र और चार्ट देखें। सभी मौजूदा रिकॉर्ड प्रदर्शन डेटा के रूप में चिह्नित हैं।',
+  help_2: '“समस्या दर्ज करें” से रिपोर्ट बनाएँ। आपको RSA-2026-00001 जैसा संदर्भ क्रमांक मिलेगा।',
+  help_3: 'अपने संदर्भ क्रमांक से “रिपोर्ट ट्रैक करें” (या चैटबॉट) में स्थिति का इतिहास देखें।',
+  help_4: 'रिपोर्ट केवल इसी ब्राउज़र (localStorage) में सहेजी जाती हैं। ये किसी सरकारी विभाग या अन्य निवासियों को नहीं भेजी जातीं।',
+  help_5: 'नीचे दाईं ओर का चैट बटन डेमो सहायक खोलता है। यह सरल स्थानीय कीवर्ड नियमों पर चलता है, जनरेटिव AI मॉडल पर नहीं।',
+  c_total: 'कुल सामुदायिक रिपोर्ट', c_new: 'नई रिपोर्ट', c_review: 'समीक्षाधीन', c_action: 'कार्रवाई रिपोर्ट की गई', c_resolved: 'सत्यापित समाधान', c_top: 'सबसे अधिक दर्ज की गई समस्या',
+  c_none: 'अभी कोई रिपोर्ट नहीं', c_rejected_note: 'अस्वीकृत सहित', c_new_sub: 'स्थिति: जमा की गई', c_times: 'रिपोर्ट',
+  summary_note: 'ये आँकड़े इस ब्राउज़र के उन रिकॉर्ड से निकाले गए हैं जो मौजूदा फ़िल्टर से मेल खाते हैं। नमूना रिकॉर्ड केवल प्रदर्शन हेतु हैं।',
+  cat_title: 'सामुदायिक समस्या श्रेणियाँ', cat_report: 'दर्ज करें', cat_guidance: 'आधिकारिक मार्गदर्शन', cat_count: 'रिपोर्ट',
+  top_title: 'सबसे अधिक दर्ज समस्याएँ (मौजूदा फ़िल्टर)', top_empty: 'मौजूदा फ़िल्टर से कोई रिपोर्ट मेल नहीं खाती।',
+  map_title: 'समस्या मानचित्र – रामगढ़ ज़िला',
+  map_note: 'मार्कर अनुमानित, स्पष्ट रूप से चिह्नित संदर्भ स्थानों (प्रखंड-स्तर के बिंदु या रिपोर्टकर्ता द्वारा दिया गया अनुमानित स्थान) पर लगे हैं। ये घटना के सटीक स्थान नहीं हैं। कोई वास्तविक निगरानी केंद्र या सत्यापित घटना नहीं दिखाई गई है।',
+  map_legend: 'संकेत', map_legend_note: 'भरा रंग = समस्या श्रेणी। बाहरी रेखा का रंग = रिपोर्ट की स्थिति।', map_shown: 'रिपोर्ट मानचित्र पर',
+  map_block_ref: 'प्रखंड का अनुमानित संदर्भ बिंदु', map_approx: 'अनुमानित संदर्भ स्थान (प्रखंड स्तर)', map_user_approx: 'रिपोर्टकर्ता द्वारा दिया गया अनुमानित स्थान',
+  map_err: 'मानचित्र लाइब्रेरी लोड नहीं हो सकी। कृपया इंटरनेट जाँचें और पेज दोबारा खोलें।',
+  map_pop_cat: 'श्रेणी', map_pop_loc: 'स्थान', map_pop_date: 'दर्ज तिथि', map_pop_status: 'स्थिति', map_pop_desc: 'विवरण',
+  r_title: 'सामुदायिक समस्या दर्ज करें', r_intro: 'यह फ़ॉर्म प्रदर्शन रिपोर्ट बनाता है। यह केवल इसी ब्राउज़र में सहेजी जाती है और आधिकारिक शिकायत नहीं है।',
+  l_title: 'रिपोर्ट का शीर्षक', l_cat: 'समस्या श्रेणी', l_block: 'प्रखंड', l_village: 'गाँव या वार्ड', l_date: 'घटना की तिथि', l_desc: 'विवरण',
+  l_photo: 'फ़ोटो (वैकल्पिक)', l_photo_hint: 'JPG, PNG या WebP, अधिकतम 2 MB। इस डेमो में केवल फ़ाइल का नाम रखा जाता है। लोगों के चेहरे या निजी दस्तावेज़ की फ़ोटो न लें।',
+  l_loc: 'अनुमानित स्थान (वैकल्पिक)', l_lat: 'अक्षांश', l_lng: 'देशांतर', l_geo: 'मेरा वर्तमान स्थान उपयोग करें',
+  l_loc_hint: 'निर्देशांक लगभग 100 मीटर तक गोल किए जाते हैं और मानचित्र पर अनुमानित स्थान के रूप में दिखते हैं। खाली छोड़ने पर प्रखंड का संदर्भ बिंदु लिया जाएगा।',
+  l_contact: 'संपर्क विवरण (वैकल्पिक)', l_contact_hint: 'वैकल्पिक। सार्वजनिक दृश्य या CSV में कभी नहीं दिखता। केवल डेमो एडमिन दृश्य में दिखता है।',
+  l_select: 'चुनें…', btn_preview: 'पूर्वावलोकन और जमा करें', btn_clear: 'फ़ॉर्म साफ़ करें',
+  v_title: '5 से 100 अक्षरों का शीर्षक लिखें।', v_cat: 'श्रेणी चुनें।', v_block: 'प्रखंड चुनें।', v_village: 'गाँव या वार्ड लिखें (2 से 60 अक्षर)।',
+  v_date: 'वैध तिथि चुनें जो भविष्य की न हो।', v_desc: 'समस्या का वर्णन 20 से 1000 अक्षरों में करें।', v_photo_type: 'केवल JPG, PNG या WebP चित्र मान्य हैं।',
+  v_photo_size: 'चित्र 2 MB या उससे छोटा होना चाहिए।', v_loc: 'रामगढ़ क्षेत्र के भीतर अक्षांश और देशांतर दोनों लिखें (लगभग 23.2–24.1 उ., 85.0–86.0 पू.)।',
+  v_contact: 'वैध 10 अंकों का मोबाइल नंबर या ईमेल लिखें, या खाली छोड़ दें।', geo_fail: 'आपका स्थान नहीं मिल सका। आप अनुमानित निर्देशांक स्वयं लिख सकते हैं।',
+  privacy_title: 'गोपनीयता और सुरक्षा',
+  privacy_1: 'आधार, बैंक, स्वास्थ्य या अन्य संवेदनशील निजी जानकारी न लिखें।',
+  privacy_2: 'सुरक्षित रहें: फ़ोटो के लिए खतरनाक जगहों, क्षतिग्रस्त बिजली लाइनों या आग के पास न जाएँ।',
+  privacy_3: 'यह फ़ॉर्म आपातकालीन सेवाओं को कॉल नहीं करता। आपात स्थिति में तुरंत अपनी स्थानीय आपातकालीन सेवा से संपर्क करें।',
+  privacy_4: 'डेटा इसी ब्राउज़र के localStorage में रहता है। यह अधिकारियों या अन्य निवासियों से साझा नहीं होता।',
+  privacy_5: 'असत्यापित रिपोर्ट आधिकारिक शिकायत या पुष्ट सरकारी कार्रवाई नहीं है।',
+  p_title: 'अपनी रिपोर्ट का पूर्वावलोकन', p_edit: 'संपादित करें', p_confirm: 'पुष्टि करें और सहेजें', p_photo_name: 'फ़ोटो फ़ाइल', p_none: 'कोई नहीं', p_contact_priv: 'संपर्क (निजी रखा जाएगा)',
+  done_title: 'रिपोर्ट इसी ब्राउज़र में सहेजी गई', done_ref: 'आपका संदर्भ क्रमांक:',
+  done_note: 'महत्वपूर्ण: इस प्रोटोटाइप ने आपकी रिपोर्ट किसी सरकारी विभाग को नहीं भेजी है। आधिकारिक शिकायत के लिए संसाधन केंद्र में दिए आधिकारिक माध्यम उपयोग करें।',
+  done_track: 'इस रिपोर्ट को ट्रैक करें', done_another: 'एक और रिपोर्ट दर्ज करें', copy: 'कॉपी', copied: 'संदर्भ क्रमांक कॉपी हुआ', save_fail: 'सहेज नहीं सके: ब्राउज़र स्टोरेज उपलब्ध नहीं है या भर गया है।',
+  tr_title: 'संदर्भ क्रमांक से रिपोर्ट ट्रैक करें', tr_intro: 'RSA-2026-00001 जैसा संदर्भ क्रमांक लिखें। केवल इसी ब्राउज़र में सहेजी रिपोर्ट मिल सकती हैं।',
+  tr_label: 'संदर्भ क्रमांक', tr_btn: 'रिपोर्ट खोजें', tr_notfound: 'इस संदर्भ क्रमांक की कोई रिपोर्ट इस ब्राउज़र में नहीं है।', tr_invalid: 'संदर्भ क्रमांक RSA-2026-00001 के प्रारूप में लिखें।',
+  tb_search: 'संदर्भ क्रमांक या शीर्षक से खोजें', tb_caption: 'सामुदायिक रिपोर्ट की सूची', th_ref: 'संदर्भ', th_title: 'समस्या शीर्षक', th_cat: 'श्रेणी', th_block: 'प्रखंड', th_village: 'गाँव / वार्ड',
+  th_date: 'जमा तिथि', th_status: 'स्थिति', th_action: 'कार्रवाई', view: 'देखें', export: 'CSV निर्यात', reset_demo: 'प्रदर्शन डेटा रीसेट करें',
+  empty_reports: 'आपकी खोज और फ़िल्टर से कोई रिपोर्ट मेल नहीं खाती।', prev: 'पिछला', next: 'अगला', showing: 'दिखा रहे हैं', of: 'में से', csv_empty: 'निर्यात के लिए कोई रिपोर्ट नहीं है।', csv_done: 'CSV डाउनलोड हुई (संपर्क विवरण शामिल नहीं)।',
+  ls_note: 'रिकॉर्ड इसी ब्राउज़र (localStorage) में सहेजे जाते हैं। ये सरकारी अधिकारियों या अन्य निवासियों से साझा नहीं होते। संपर्क विवरण यहाँ कभी नहीं दिखाए या निर्यात किए जाते।',
+  d_title: 'रिपोर्ट का विवरण', d_desc: 'विवरण', d_history: 'स्थिति का इतिहास', d_incident: 'घटना की तिथि', d_submitted: 'जमा तिथि', d_photo: 'फ़ोटो फ़ाइल', d_note: 'समाधान टिप्पणी',
+  d_contact: 'संपर्क (निजी)', d_loc: 'मानचित्र स्थान', d_unverified: 'यह रिपोर्ट असत्यापित सामुदायिक सूचना है। यह आधिकारिक शिकायत या पुष्ट सरकारी कार्रवाई नहीं है।',
+  d_demo: 'प्रदर्शन नमूना', d_local: 'स्थानीय रूप से जमा (असत्यापित)', close: 'बंद करें', cancel: 'रद्द करें', by: 'द्वारा',
+  rs_title: 'प्रदर्शन डेटा रीसेट करें?', rs_body: 'इससे इस ब्राउज़र में सहेजी सभी रिपोर्ट (आपकी बनाई हुई भी) हट जाएँगी और नमूना रिकॉर्ड वापस आ जाएँगे। इसे पूर्ववत नहीं किया जा सकता।',
+  rs_confirm: 'हाँ, डेटा रीसेट करें', rs_done: 'प्रदर्शन डेटा रीसेट हो गया।',
+  a_title: 'विश्लेषण (प्रदर्शन डेटा)', a_note: 'चार्ट इस ब्राउज़र में सहेजे रिकॉर्ड से बनते हैं और ऊपर के फ़िल्टर के अनुसार बदलते हैं। ये प्रदर्शन डेटा हैं, रामगढ़ के वास्तविक आँकड़े नहीं।',
+  a_cat: 'श्रेणी के अनुसार रिपोर्ट', a_block: 'प्रखंड के अनुसार रिपोर्ट', a_status: 'स्थिति के अनुसार रिपोर्ट', a_time: 'समय के अनुसार रिपोर्ट (साप्ताहिक)', a_top: 'सबसे अधिक दर्ज सामुदायिक समस्याएँ',
+  a_empty: 'यह चार्ट बनाने के लिए पर्याप्त डेटा नहीं है। फ़िल्टर बदलें या रिपोर्ट जोड़ें।', lib_err: 'चार्ट लाइब्रेरी लोड नहीं हो सकी। इंटरनेट जाँचें।', a_reports: 'रिपोर्ट',
+  res_title: 'आधिकारिक संसाधन केंद्र',
+  res_intro: 'आधिकारिक जानकारी के शुरुआती संदर्भ। यह प्रोटोटाइप हर लिंक की वर्तमान उपलब्धता की पुष्टि नहीं कर सका, इसलिए हर लिंक “असत्यापित शुरुआती लिंक” है। भरोसा करने से पहले कृपया पता जाँच लें।',
+  res_search: 'संसाधन खोजें', res_cat: 'संसाधन श्रेणी', res_empty: 'कोई मेल खाता संसाधन नहीं मिला। कोई और शब्द आज़माएँ।', res_visit: 'वेबसाइट देखें', res_org: 'संगठन',
+  res_lastv: 'अंतिम सत्यापन', res_notv: 'अभी सत्यापित नहीं', res_unv: 'असत्यापित शुरुआती लिंक',
+  aw_title: 'पर्यावरण जागरूकता केंद्र',
+  aw_intro: 'सामान्य शैक्षिक मार्गदर्शन और कार्य-सूचियाँ। टिक केवल इसी ब्राउज़र में सहेजे जाते हैं। यह सामान्य सलाह है, चिकित्सकीय सलाह नहीं, और कोई प्रदूषण रीडिंग नहीं दिखाई गई है।',
+  aw_progress: 'पूर्ण', aw_more: 'और जानें',
+  ad_title: 'प्रशासनिक इंटरफ़ेस (डेमो)',
+  ad_warn: 'केवल डेमो: यह लॉगिन आपके ब्राउज़र में चलता है और सुरक्षित नहीं है। कोई भी इसे पढ़ या बायपास कर सकता है। वास्तविक उपयोग के लिए सर्वर-स्तर का प्रमाणीकरण और प्राधिकरण ज़रूरी है। यहाँ कोई वास्तविक क्रेडेंशियल या निजी डेटा नहीं है।',
+  ad_login_title: 'डेमो लॉगिन', ad_user: 'उपयोगकर्ता नाम', ad_pass: 'पासवर्ड', ad_creds: 'सार्वजनिक डेमो क्रेडेंशियल: उपयोगकर्ता नाम <code>demo</code>, पासवर्ड <code>demo123</code>।',
+  ad_login: 'साइन इन', ad_bad: 'उपयोगकर्ता नाम या पासवर्ड गलत है।', ad_logout: 'साइन आउट', ad_overview: 'अवलोकन', ad_queue: 'समीक्षा कतार', ad_qfilter: 'दिखाएँ',
+  ad_q_open: 'खुली (जमा + समीक्षाधीन)', ad_q_all: 'सभी रिपोर्ट', ad_select: 'समीक्षा के लिए कतार से रिपोर्ट चुनें।', ad_status_ctrl: 'स्थिति अपडेट करें',
+  ad_note: 'समाधान / समीक्षा टिप्पणी', ad_save: 'स्थिति अपडेट सहेजें', ad_note_req: '“सत्यापित समाधान” या “अस्वीकृत” के लिए कम से कम 5 अक्षरों की टिप्पणी ज़रूरी है।',
+  ad_saved: 'स्थिति अपडेट हुई और इतिहास में जुड़ गई।', ad_nochange: 'पहले स्थिति बदलें या टिप्पणी जोड़ें।', ad_analytics: 'मूल विश्लेषण – स्थिति अवलोकन', ad_queue_empty: 'इस दृश्य में कोई रिपोर्ट नहीं।',
+  ad_denied: 'पहले डेमो एडमिन इंटरफ़ेस में साइन इन करें।', ad_t_total: 'कुल', ad_t_open: 'समीक्षा की प्रतीक्षा', ad_t_action: 'कार्रवाई रिपोर्ट की गई', ad_t_done: 'सत्यापित समाधान', ad_t_rej: 'अस्वीकृत',
+  ad_verify_hint: '“सत्यापित समाधान” केवल स्वतंत्र सत्यापन के बाद चुनें। “कार्रवाई रिपोर्ट की गई” का अर्थ है कि कार्रवाई की सूचना मिली, स्वतंत्र रूप से सत्यापित नहीं।',
+  footer_note: 'रामगढ़ सहाय्यक AI एक सामुदायिक प्रोटोटाइप है और आधिकारिक सरकारी वेबसाइट नहीं है। यह किसी सरकारी प्रणाली से जुड़ा नहीं है। शिकायत, योजनाओं और आपात स्थितियों के लिए हमेशा आधिकारिक माध्यम उपयोग करें।',
+  ch_sub: 'डेमो सहायक · स्थानीय उत्तर-नियम', ch_demo: 'यह डेमो सहायक स्थानीय कीवर्ड नियमों पर चलता है – जनरेटिव AI मॉडल नहीं है। उत्तर अधूरे हो सकते हैं। आधिकारिक स्रोत नहीं।',
+  ch_ph: 'अपना सवाल लिखें…', ch_err: 'क्षमा करें, कुछ गड़बड़ हो गई। कृपया दोबारा प्रयास करें या संसाधन केंद्र देखें।', ch_sources: 'स्रोत', ch_report_btn: 'रिपोर्ट फ़ॉर्म खोलें', ch_view_btn: 'रिपोर्ट विवरण देखें',
+  lang_label: 'भाषा', storage_err: 'ब्राउज़र स्टोरेज उपलब्ध नहीं है, इसलिए पेज बंद करने के बाद बदलाव सहेजे नहीं जाएँगे।',
+  lib_warn: 'कुछ ऑनलाइन लाइब्रेरी (Bootstrap, Leaflet या Chart.js) लोड नहीं हुईं। पूरी सुविधा के लिए इंटरनेट आवश्यक है।',
+  page_dashboard: 'डैशबोर्ड', page_map: 'समस्या मानचित्र', page_report: 'समस्या दर्ज करें', page_track: 'रिपोर्ट ट्रैक करें', page_reports: 'सभी रिपोर्ट', page_analytics: 'विश्लेषण', page_resources: 'संसाधन केंद्र', page_awareness: 'जागरूकता केंद्र', page_admin: 'प्रशासन (डेमो)'
+}};
+let lang = 'en';
+function t(k) { return (I18N[lang] && I18N[lang][k]) || I18N.en[k] || k; }
+function L10(o) { return o[lang] || o.en; }
+function locale() { return lang === 'hi' ? 'hi-IN' : 'en-IN'; }
+function fmtDate(iso) { const d = new Date(iso); return isNaN(d) ? String(iso) : d.toLocaleDateString(locale(), { day: '2-digit', month: 'short', year: 'numeric' }); }
+function fmtDateTime(iso) { const d = new Date(iso); return isNaN(d) ? String(iso) : d.toLocaleString(locale(), { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+
+/* ======================================================================
+   2. Static reference data
+   ====================================================================== */
+const BLOCKS = [
+  { id: 'Ramgarh', hi: 'रामगढ़', lat: 23.630, lng: 85.520 },
+  { id: 'Patratu', hi: 'पतरातू', lat: 23.678, lng: 85.300 },
+  { id: 'Mandu', hi: 'मांडू', lat: 23.633, lng: 85.670 },
+  { id: 'Gola', hi: 'गोला', lat: 23.540, lng: 85.700 },
+  { id: 'Chitarpur', hi: 'चितरपुर', lat: 23.700, lng: 85.550 },
+  { id: 'Dulmi', hi: 'दुलमी', lat: 23.560, lng: 85.430 }
+];
+const STATUSES = [
+  { id: 'submitted', color: '#4b5563', en: 'Submitted', hi: 'जमा की गई' },
+  { id: 'review', color: '#1d4ed8', en: 'Under Review', hi: 'समीक्षाधीन' },
+  { id: 'action', color: '#b45309', en: 'Action Reported', hi: 'कार्रवाई रिपोर्ट की गई' },
+  { id: 'resolved', color: '#15803d', en: 'Verified Resolved', hi: 'सत्यापित समाधान' },
+  { id: 'rejected', color: '#b91c1c', en: 'Rejected', hi: 'अस्वीकृत' }
+];
+const CATEGORIES = [
+  { id: 'water', icon: 'bi-droplet-half', color: '#0284c7', res: 'jjm', en: 'Drinking Water & Hand Pumps', hi: 'पेयजल और चापाकल',
+    den: 'Water supply problems and broken hand pumps (chapakal).', dhi: 'जलापूर्ति की समस्या और खराब चापाकल।' },
+  { id: 'leak', icon: 'bi-moisture', color: '#0891b2', res: 'jjm', en: 'Water Leakage & Quality', hi: 'जल रिसाव और गुणवत्ता',
+    den: 'Pipe leakage and suspected water-quality problems.', dhi: 'पाइप से रिसाव और संदिग्ध जल गुणवत्ता।' },
+  { id: 'garbage', icon: 'bi-trash3-fill', color: '#65a30d', res: 'sbm', en: 'Garbage & Waste Management', hi: 'कचरा और अपशिष्ट प्रबंधन',
+    den: 'Garbage accumulation and waste collection issues.', dhi: 'कचरे का जमाव और कचरा संग्रहण की समस्या।' },
+  { id: 'drain', icon: 'bi-water', color: '#7c3aed', res: 'sbm', en: 'Blocked Drains & Sanitation', hi: 'बंद नाली और स्वच्छता',
+    den: 'Blocked drains, waterlogging and sanitation problems.', dhi: 'बंद नालियाँ, जलजमाव और स्वच्छता की समस्या।' },
+  { id: 'road', icon: 'bi-cone-striped', color: '#92400e', res: 'district', en: 'Road Damage & Potholes', hi: 'सड़क क्षति और गड्ढे',
+    den: 'Damaged roads and potholes.', dhi: 'क्षतिग्रस्त सड़कें और गड्ढे।' },
+  { id: 'light', icon: 'bi-lightbulb-fill', color: '#d97706', res: 'district', en: 'Streetlight Failures', hi: 'स्ट्रीटलाइट खराब',
+    den: 'Streetlights that are not working.', dhi: 'बंद या खराब स्ट्रीटलाइट।' },
+  { id: 'air', icon: 'bi-wind', color: '#475569', res: 'cpcb', en: 'Air Pollution, Dust & Smoke', hi: 'वायु प्रदूषण, धूल और धुआँ',
+    den: 'Visible dust and smoke affecting air quality.', dhi: 'हवा को प्रभावित करने वाली धूल और धुआँ।' },
+  { id: 'burn', icon: 'bi-fire', color: '#dc2626', res: 'jspcb', en: 'Open Burning & Fire Hazards', hi: 'खुले में जलाना और आग का खतरा',
+    den: 'Open burning of waste and fire-related environmental hazards.', dhi: 'कचरे का खुले में जलाना और आग से जुड़े पर्यावरणीय खतरे।' },
+  { id: 'health', icon: 'bi-heart-pulse-fill', color: '#be185d', res: 'india', en: 'Public Health & Hygiene', hi: 'जन-स्वास्थ्य और स्वच्छता',
+    den: 'Hygiene awareness and public-health concerns.', dhi: 'स्वच्छता जागरूकता और जन-स्वास्थ्य संबंधी चिंताएँ।' },
+  { id: 'power', icon: 'bi-lightning-charge-fill', color: '#ea580c', res: 'jharkhand', en: 'Electricity & Public Infrastructure', hi: 'बिजली और सार्वजनिक ढाँचा',
+    den: 'Electricity supply and public-infrastructure problems.', dhi: 'बिजली आपूर्ति और सार्वजनिक ढाँचे की समस्याएँ।' },
+  { id: 'gov', icon: 'bi-building-fill', color: '#1d4ed8', res: 'services', en: 'Government Services & Benefits', hi: 'सरकारी सेवाएँ और लाभ',
+    den: 'Information on government services and public benefits.', dhi: 'सरकारी सेवाओं और सार्वजनिक लाभों की जानकारी।' },
+  { id: 'bio', icon: 'bi-tree-fill', color: '#15803d', res: 'moef', en: 'Trees, Biodiversity & Environment', hi: 'पेड़, जैव विविधता और पर्यावरण',
+    den: 'Tree protection and local environmental concerns.', dhi: 'वृक्ष संरक्षण और स्थानीय पर्यावरणीय चिंताएँ।' }
+];
+const RESOURCES = [
+  { id: 'district', url: 'https://ramgarh.nic.in/', cat: 'admin', en: 'Ramgarh District Administration', hi: 'रामगढ़ ज़िला प्रशासन',
+    den: 'District-level information and notices for Ramgarh.', dhi: 'रामगढ़ के लिए ज़िला-स्तरीय जानकारी और सूचनाएँ।' },
+  { id: 'jharkhand', url: 'https://www.jharkhand.gov.in/', cat: 'admin', en: 'Government of Jharkhand', hi: 'झारखंड सरकार',
+    den: 'State government portal with departments, notices and services.', dhi: 'विभागों, सूचनाओं और सेवाओं वाला राज्य सरकार पोर्टल।' },
+  { id: 'cpcb', url: 'https://cpcb.nic.in/', cat: 'pollution', en: 'Central Pollution Control Board', hi: 'केंद्रीय प्रदूषण नियंत्रण बोर्ड',
+    den: 'National body for pollution control; look here for official air-quality information.', dhi: 'प्रदूषण नियंत्रण की राष्ट्रीय संस्था; आधिकारिक वायु-गुणवत्ता जानकारी यहाँ देखें।' },
+  { id: 'jspcb', url: 'https://jspcb.nic.in/', cat: 'pollution', en: 'Jharkhand State Pollution Control Board', hi: 'झारखंड राज्य प्रदूषण नियंत्रण बोर्ड',
+    den: 'State pollution control authority for Jharkhand.', dhi: 'झारखंड का राज्य प्रदूषण नियंत्रण प्राधिकरण।' },
+  { id: 'jjm', url: 'https://jaljeevanmission.gov.in/', cat: 'water', en: 'Jal Jeevan Mission', hi: 'जल जीवन मिशन',
+    den: 'National mission for household tap water supply; official drinking-water information.', dhi: 'घरों तक नल जल आपूर्ति का राष्ट्रीय मिशन; पेयजल की आधिकारिक जानकारी।' },
+  { id: 'sbm', url: 'https://swachhbharatmission.ddws.gov.in/', cat: 'sanitation', en: 'Swachh Bharat Mission', hi: 'स्वच्छ भारत मिशन',
+    den: 'National mission on sanitation, cleanliness and solid-waste management.', dhi: 'स्वच्छता, सफ़ाई और ठोस कचरा प्रबंधन का राष्ट्रीय मिशन।' },
+  { id: 'services', url: 'https://services.india.gov.in/', cat: 'services', en: 'India Government Services Portal', hi: 'भारत सरकार सेवा पोर्टल',
+    den: 'Directory of online government services.', dhi: 'ऑनलाइन सरकारी सेवाओं की निर्देशिका।' },
+  { id: 'india', url: 'https://www.india.gov.in/', cat: 'services', en: 'National Government Services Portal (India.gov.in)', hi: 'राष्ट्रीय सरकारी सेवा पोर्टल (India.gov.in)',
+    den: 'National portal with links to ministries, schemes and citizen information.', dhi: 'मंत्रालयों, योजनाओं और नागरिक जानकारी के लिंक वाला राष्ट्रीय पोर्टल।' },
+  { id: 'moef', url: 'https://moef.gov.in/', cat: 'environment', en: 'Ministry of Environment, Forest and Climate Change', hi: 'पर्यावरण, वन एवं जलवायु परिवर्तन मंत्रालय',
+    den: 'National ministry for environment, forests, wildlife and climate policy.', dhi: 'पर्यावरण, वन, वन्यजीव और जलवायु नीति का राष्ट्रीय मंत्रालय।' }
+];
+const RES_CATS = {
+  admin: { en: 'Administration', hi: 'प्रशासन' }, water: { en: 'Drinking water', hi: 'पेयजल' }, sanitation: { en: 'Sanitation & waste', hi: 'स्वच्छता और कचरा' },
+  pollution: { en: 'Pollution control', hi: 'प्रदूषण नियंत्रण' }, environment: { en: 'Environment & forests', hi: 'पर्यावरण और वन' }, services: { en: 'Citizen services', hi: 'नागरिक सेवाएँ' }
+};
+const getCat = (id) => CATEGORIES.find((c) => c.id === id);
+const getStatus = (id) => STATUSES.find((s) => s.id === id);
+const getBlock = (id) => BLOCKS.find((b) => b.id === id);
+const getRes = (id) => RESOURCES.find((r) => r.id === id);
+const catName = (id) => { const c = getCat(id); return c ? L10(c) : id; };
+const statusName = (id) => { const s = getStatus(id); return s ? L10(s) : id; };
+const blockName = (id) => { const b = getBlock(id); return b ? (lang === 'hi' ? b.hi : b.id) : id; };
+
+/* ======================================================================
+   3. Data model + localStorage
+   ====================================================================== */
+const LS = { reports: 'rsa_reports_v1', lang: 'rsa_lang', checks: 'rsa_checks_v1', help: 'rsa_help_dismissed' };
+const SS = { admin: 'rsa_admin_session', chat: 'rsa_chat_history' };
+const REF_RE = /^RSA-(\d{4})-(\d{5})$/;
+let REPORTS = [];
+let storageOK = true;
+
+function seedReports() {
+  // [category, block, village, title, description, incident date, submitted date, final status, review note]
+  const S = [
+    ['water', 'Ramgarh', 'Sample Ward 4', 'Hand pump not working near community hall', 'Sample record: the hand pump handle is stuck and no water comes out. Residents are using a farther source.', '2026-08-02', '2026-08-04', 'review'],
+    ['garbage', 'Patratu', 'Sample Ward 7', 'Garbage heap near market entrance', 'Sample record: waste has been piling up near the market entrance for several days.', '2026-08-09', '2026-08-10', 'submitted'],
+    ['road', 'Mandu', 'Sample Village A', 'Potholes on link road', 'Sample record: several deep potholes make the road difficult for two-wheelers after rain.', '2026-08-15', '2026-08-16', 'action'],
+    ['drain', 'Gola', 'Sample Ward 2', 'Blocked drain causing waterlogging', 'Sample record: the drain is blocked by silt and plastic; water collects on the lane.', '2026-08-18', '2026-08-19', 'resolved'],
+    ['light', 'Chitarpur', 'Sample Ward 5', 'Streetlights off on main lane', 'Sample record: three streetlights have not been working for over a week.', '2026-08-28', '2026-08-29', 'review'],
+    ['air', 'Dulmi', 'Sample Village B', 'Dust from road repair work', 'Sample record: heavy dust near homes during daytime road work.', '2026-09-03', '2026-09-04', 'submitted'],
+    ['burn', 'Ramgarh', 'Sample Ward 9', 'Waste being burnt in open plot', 'Sample record: smoke from burning rubbish in an empty plot in the evenings.', '2026-09-07', '2026-09-08', 'action'],
+    ['leak', 'Patratu', 'Sample Village C', 'Pipeline leakage at junction', 'Sample record: water leaking from a pipe joint and forming a puddle on the road.', '2026-09-10', '2026-09-11', 'submitted'],
+    ['power', 'Mandu', 'Sample Ward 1', 'Leaning electric pole near lane', 'Sample record: an electric pole appears to be leaning. Please keep a safe distance.', '2026-09-14', '2026-09-15', 'review'],
+    ['health', 'Gola', 'Sample Ward 6', 'Request for hygiene awareness camp', 'Sample record: residents would like a handwashing and hygiene awareness session.', '2026-09-17', '2026-09-18', 'resolved'],
+    ['gov', 'Dulmi', 'Sample Village D', 'Information needed on government services', 'Sample record: duplicate of an earlier information request.', '2026-09-21', '2026-09-22', 'rejected'],
+    ['bio', 'Chitarpur', 'Sample Village E', 'Tree cutting near village pond', 'Sample record: concern about trees being cut near the pond bank.', '2026-09-25', '2026-09-26', 'submitted'],
+    ['garbage', 'Ramgarh', 'Sample Ward 2', 'Overflowing community bins', 'Sample record: community bins overflow and are not emptied regularly.', '2026-10-01', '2026-10-02', 'resolved'],
+    ['water', 'Dulmi', 'Sample Village F', 'Low water pressure in public tap', 'Sample record: the public tap gives very little water in the mornings.', '2026-10-08', '2026-10-09', 'submitted'],
+    ['road', 'Patratu', 'Sample Ward 3', 'Broken road edge near school', 'Sample record: the edge of the road near a school has collapsed.', '2026-10-15', '2026-10-16', 'submitted'],
+    ['drain', 'Ramgarh', 'Sample Ward 11', 'Open drain with stagnant water', 'Sample record: stagnant water in an open drain; mosquito concern.', '2026-10-22', '2026-10-23', 'review']
+  ];
+  const path = { submitted: ['submitted'], review: ['submitted', 'review'], action: ['submitted', 'review', 'action'], resolved: ['submitted', 'review', 'action', 'resolved'], rejected: ['submitted', 'review', 'rejected'] };
+  const notes = { submitted: 'Sample record created for demonstration.', review: 'Sample status: moved to review.', action: 'Sample status: action reported (not independently verified).', resolved: 'Sample status: marked verified resolved for demonstration.', rejected: 'Sample status: rejected as duplicate.' };
+  return S.map((s, i) => {
+    const seq = path[s[7]];
+    const history = seq.map((st, k) => ({ status: st, at: localISO(addDays(s[6], k * 2)), note: notes[st], by: 'sample-data' }));
+    return {
+      id: 'RSA-2026-' + String(i + 1).padStart(5, '0'), title: '[Sample] ' + s[3], category: s[0], block: s[1], village: s[2], description: s[4],
+      incidentDate: s[5], submittedAt: localISO(addDays(s[6], 0)), status: s[7], photoName: '', lat: null, lng: null, contact: '',
+      resolutionNote: (s[7] === 'resolved' || s[7] === 'rejected') ? notes[s[7]] : '', isDemo: true, history
+    };
+  });
+}
+function validRecord(r) {
+  return r && typeof r.id === 'string' && REF_RE.test(r.id) && getCat(r.category) && getBlock(r.block) && getStatus(r.status) && Array.isArray(r.history);
+}
+function showStorageError() { const b = $('storageWarn'); b.textContent = t('storage_err'); b.hidden = false; }
+function loadReports() {
+  try {
+    const raw = localStorage.getItem(LS.reports);
+    if (!raw) { REPORTS = seedReports(); saveReports(); return REPORTS; }
+    const parsed = JSON.parse(raw);
+    REPORTS = Array.isArray(parsed) ? parsed.filter(validRecord) : seedReports();
+  } catch (e) { storageOK = false; REPORTS = seedReports(); showStorageError(); }
+  return REPORTS;
+}
+function saveReports() {
+  try { localStorage.setItem(LS.reports, JSON.stringify(REPORTS)); return true; }
+  catch (e) { storageOK = false; showStorageError(); return false; }
+}
+function nextRefId() {
+  let max = 0;
+  REPORTS.forEach((r) => { const m = REF_RE.exec(r.id); if (m) max = Math.max(max, parseInt(m[2], 10)); });
+  return 'RSA-' + new Date().getFullYear() + '-' + String(max + 1).padStart(5, '0');
+}
+function createReport(d) {
+  const now = localISO(new Date());
+  const rec = {
+    id: nextRefId(), title: d.title, category: d.category, block: d.block, village: d.village, description: d.description,
+    incidentDate: d.incidentDate, submittedAt: now, status: 'submitted', photoName: d.photoName || '',
+    lat: d.lat, lng: d.lng, contact: d.contact || '', resolutionNote: '', isDemo: false,
+    history: [{ status: 'submitted', at: now, note: 'Report submitted by resident (unverified).', by: 'resident' }]
+  };
+  REPORTS.unshift(rec);
+  if (!saveReports()) { REPORTS.shift(); return null; }
+  return rec;
+}
+function getReportById(id) {
+  const m = /^RSA[-\s]?(\d{4})[-\s]?(\d{1,5})$/i.exec(String(id || '').trim());
+  if (!m) return null;
+  const norm = 'RSA-' + m[1] + '-' + m[2].padStart(5, '0');
+  return REPORTS.find((r) => r.id === norm) || null;
+}
+let adminAuthed = false;
+function updateReportStatus(id, status, note, actor) {
+  if (!adminAuthed) return false;                       // restricted to the (demo) admin interface
+  const r = getReportById(id);
+  if (!r || !getStatus(status)) return false;
+  const at = localISO(new Date());
+  r.history.push({ status, at, note: note || '', by: actor || 'admin-demo' });
+  r.status = status;
+  r.resolutionNote = note || r.resolutionNote || '';
+  return saveReports();
+}
+const F = { block: '', village: '', category: '', status: '', from: '', to: '' };
+function filterReports(f) {
+  f = f || F;
+  const v = (f.village || '').trim().toLowerCase();
+  return REPORTS.filter((r) => {
+    if (f.block && r.block !== f.block) return false;
+    if (f.category && r.category !== f.category) return false;
+    if (f.status && r.status !== f.status) return false;
+    if (v && !r.village.toLowerCase().includes(v)) return false;
+    const d = r.submittedAt.slice(0, 10);
+    if (f.from && d < f.from) return false;
+    if (f.to && d > f.to) return false;
+    return true;
+  });
+}
+function computeStats(list) {
+  const s = { total: list.length, submitted: 0, review: 0, action: 0, resolved: 0, rejected: 0, byCat: {}, byBlock: {} };
+  list.forEach((r) => {
+    if (s[r.status] !== undefined) s[r.status]++;
+    s.byCat[r.category] = (s.byCat[r.category] || 0) + 1;
+    s.byBlock[r.block] = (s.byBlock[r.block] || 0) + 1;
+  });
+  const sorted = Object.entries(s.byCat).sort((a, b) => b[1] - a[1]);
+  s.top = sorted[0] || null; s.sortedCats = sorted;
+  return s;
+}
+
+/* ======================================================================
+   4. UI utilities
+   ====================================================================== */
+function toast(msg, type) {
+  const el = h('div', { class: 'toast-x ' + (type || ''), text: msg });
+  $('toasts').append(el);
+  setTimeout(() => el.remove(), 4200);
+}
+function badgeHtml(statusId) { const s = getStatus(statusId); return '<span class="badge-status" style="background:' + (s ? s.color : '#4b5563') + '">' + esc(statusName(statusId)) + '</span>'; }
+function badgeEl(statusId) { const s = getStatus(statusId); const e = h('span', { class: 'badge-status', text: statusName(statusId) }); e.style.background = s ? s.color : '#4b5563'; return e; }
+function modal(id) { return libs.bs ? bootstrap.Modal.getOrCreateInstance($(id)) : null; }
+function openModal(id) { const m = modal(id); if (m) m.show(); }
+function closeModal(id) { const m = modal(id); if (m) m.hide(); }
+function applyLang() {
+  document.documentElement.lang = lang;
+  qsa('[data-i18n]').forEach((e) => {
+    const k = e.getAttribute('data-i18n');
+    if (k === 'ad_creds') e.innerHTML = t(k); else e.textContent = t(k);   // ad_creds is a trusted static string
+  });
+  qsa('[data-i18n-ph]').forEach((e) => { e.placeholder = t(e.getAttribute('data-i18n-ph')); });
+  $('langEn').setAttribute('aria-pressed', lang === 'en'); $('langHi').setAttribute('aria-pressed', lang === 'hi');
+  $('langEn').classList.toggle('active', lang === 'en'); $('langHi').classList.toggle('active', lang === 'hi');
+  $('chatFab').setAttribute('aria-label', lang === 'hi' ? 'चैट सहायक खोलें' : 'Open chat assistant');
+  $('chatClose').setAttribute('aria-label', lang === 'hi' ? 'चैट बंद करें' : 'Close chat');
+  $('chatClear').setAttribute('aria-label', lang === 'hi' ? 'चैट साफ़ करें' : 'Clear chat');
+  $('chatClear').title = lang === 'hi' ? 'चैट साफ़ करें' : 'Clear chat';
+}
+
+/* ======================================================================
+   5. Navigation
+   ====================================================================== */
+const VIEWS = ['dashboard', 'map', 'report', 'track', 'reports', 'analytics', 'resources', 'awareness', 'admin'];
+const FILTER_VIEWS = ['dashboard', 'map', 'reports', 'analytics'];
+let currentView = '';
+function showView(v, setHash) {
+  if (!VIEWS.includes(v)) v = 'dashboard';
+  currentView = v;
+  VIEWS.forEach((x) => { $('view-' + x).hidden = x !== v; });
+  qsa('.sidebar nav a').forEach((a) => { const on = a.dataset.view === v; a.classList.toggle('active', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  $('filterBar').hidden = !FILTER_VIEWS.includes(v);
+  $('pageName').textContent = t('page_' + v);
+  if (setHash !== false && location.hash.slice(1) !== v) location.hash = v;
+  closeSidebar();
+  if (v === 'map') { initMap(); setTimeout(() => { if (mapObj) mapObj.invalidateSize(); renderMapMarkers(); }, 60); }
+  if (v === 'analytics' || v === 'admin') renderCharts();
+  if (v === 'admin') renderAdmin();
+  window.scrollTo(0, 0);
+}
+function openSidebar() { $('sidebar').classList.add('open'); $('overlay').classList.add('open'); $('menuBtn').setAttribute('aria-expanded', 'true'); }
+function closeSidebar() { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); $('menuBtn').setAttribute('aria-expanded', 'false'); }
+
+/* ======================================================================
+   6. Filters
+   ====================================================================== */
+function opt(value, text, selected) { const o = document.createElement('option'); o.value = value; o.textContent = text; if (selected) o.selected = true; return o; }
+function fillSelect(sel, items, current) { sel.textContent = ''; items.forEach(([v, txt]) => sel.append(opt(v, txt, v === current))); }
+function rebuildOptions() {
+  const all = [['', t('f_all')]];
+  fillSelect($('fl-block'), all.concat(BLOCKS.map((b) => [b.id, blockName(b.id)])), F.block);
+  fillSelect($('fl-cat'), all.concat(CATEGORIES.map((c) => [c.id, L10(c)])), F.category);
+  fillSelect($('fl-status'), all.concat(STATUSES.map((s) => [s.id, L10(s)])), F.status);
+  const sel = [['', t('l_select')]];
+  fillSelect($('f-cat'), sel.concat(CATEGORIES.map((c) => [c.id, L10(c)])), $('f-cat').value);
+  fillSelect($('f-block'), sel.concat(BLOCKS.map((b) => [b.id, blockName(b.id)])), $('f-block').value);
+  fillSelect($('ad-qfilter'), [['open', t('ad_q_open')], ['all', t('ad_q_all')]].concat(STATUSES.map((s) => [s.id, L10(s)])), $('ad-qfilter').value || 'open');
+  const rc = [['', t('f_all')]].concat(Object.keys(RES_CATS).map((k) => [k, L10(RES_CATS[k])]));
+  fillSelect($('res-cat'), rc, $('res-cat').value);
+}
+let debounceT;
+function onFilterChange() {
+  F.block = $('fl-block').value; F.category = $('fl-cat').value; F.status = $('fl-status').value;
+  F.village = $('fl-village').value; F.from = $('fl-from').value; F.to = $('fl-to').value;
+  tableState.page = 1;
+  refreshAll();
+}
+
+/* ======================================================================
+   7. Dashboard
+   ====================================================================== */
+function statCard(icon, color, label, value, sub, isText) {
+  return '<div class="col-6 col-md-4 col-xl-2"><div class="stat-card" style="--accent:' + color + '"><i class="bi ' + icon + '" aria-hidden="true"></i>' +
+    '<div class="stat-val' + (isText ? ' stat-text' : '') + '">' + esc(value) + '</div><div class="stat-label">' + esc(label) + '</div>' +
+    (sub ? '<div class="stat-sub">' + esc(sub) + '</div>' : '') + '</div></div>';
+}
+function updateDashboard() {
+  const list = filterReports(); const s = computeStats(list);
+  $('fl-count').textContent = list.length + ' ' + t('f_count');
+  const topTxt = s.top ? catName(s.top[0]) : t('c_none');
+  $('summaryCards').innerHTML =
+    statCard('bi-collection-fill', '#0f766e', t('c_total'), s.total, s.rejected ? '(' + t('c_rejected_note') + ': ' + s.rejected + ')' : '') +
+    statCard('bi-inbox-fill', '#4b5563', t('c_new'), s.submitted, t('c_new_sub')) +
+    statCard('bi-hourglass-split', '#1d4ed8', t('c_review'), s.review, '') +
+    statCard('bi-megaphone-fill', '#b45309', t('c_action'), s.action, '') +
+    statCard('bi-patch-check-fill', '#15803d', t('c_resolved'), s.resolved, '') +
+    statCard('bi-fire', '#b91c1c', t('c_top'), topTxt, s.top ? s.top[1] + ' ' + t('c_times') : '', true);
+  $('summaryNote').textContent = t('summary_note');
+
+  $('categoryGrid').innerHTML = CATEGORIES.map((c) => {
+    const r = getRes(c.res);
+    return '<div class="col-12 col-sm-6 col-lg-4 col-xl-3"><article class="cat-card"><div class="d-flex align-items-center gap-2">' +
+      '<div class="cat-ico" style="background:' + c.color + '"><i class="bi ' + c.icon + '" aria-hidden="true"></i></div>' +
+      '<h3>' + esc(L10(c)) + '</h3></div><p>' + esc(lang === 'hi' ? c.dhi : c.den) + '</p>' +
+      '<div class="small text-muted"><strong>' + (s.byCat[c.id] || 0) + '</strong> ' + esc(t('cat_count')) + '</div>' +
+      '<div class="cat-actions"><button type="button" class="btn btn-sm btn-success" data-report-cat="' + c.id + '"><i class="bi bi-plus-circle" aria-hidden="true"></i> ' + esc(t('cat_report')) + '</button>' +
+      '<a class="btn btn-sm btn-outline-primary" href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer">' + esc(t('cat_guidance')) + ' <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i><span class="visually-hidden"> – ' + esc(L10(r)) + '</span></a></div>' +
+      '</article></div>';
+  }).join('');
+
+  const top = s.sortedCats.slice(0, 5);
+  if (!top.length) { $('topIssues').innerHTML = '<div class="text-muted">' + esc(t('top_empty')) + '</div>'; }
+  else {
+    const max = top[0][1];
+    $('topIssues').innerHTML = top.map(([id, n]) => {
+      const c = getCat(id);
+      return '<div class="mb-2"><div class="d-flex justify-content-between small"><span><i class="bi ' + c.icon + '" style="color:' + c.color + '" aria-hidden="true"></i> ' + esc(L10(c)) + '</span><strong>' + n + '</strong></div>' +
+        '<div class="progress" role="progressbar" aria-label="' + esc(L10(c)) + '" aria-valuenow="' + n + '" aria-valuemin="0" aria-valuemax="' + max + '"><div class="progress-bar" style="width:' + Math.round(n / max * 100) + '%;background:' + c.color + '"></div></div></div>';
+    }).join('');
+  }
+}
+
+/* ======================================================================
+   8. Map (Leaflet + OpenStreetMap)
+   ====================================================================== */
+let mapObj = null, markerLayer = null, blockLayer = null;
+function hashOffset(str) {
+  let a = 2166136261;
+  for (let i = 0; i < str.length; i++) { a ^= str.charCodeAt(i); a = Math.imul(a, 16777619); }
+  const x = ((a >>> 0) % 1000) / 1000, y = (((a >>> 0) >> 10) % 1000) / 1000;
+  return [(x - 0.5) * 0.07, (y - 0.5) * 0.07];
+}
+function reportLatLng(r) {
+  if (typeof r.lat === 'number' && typeof r.lng === 'number') return { lat: r.lat, lng: r.lng, user: true };
+  const b = getBlock(r.block); const o = hashOffset(r.id);
+  return { lat: b.lat + o[0], lng: b.lng + o[1], user: false };
+}
+function initMap() {
+  if (mapObj) return;
+  if (!libs.L) { $('mapErr').textContent = t('map_err'); $('mapErr').hidden = false; return; }
+  mapObj = L.map('map', { scrollWheelZoom: true }).setView([23.63, 85.52], 10);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors' }).addTo(mapObj);
+  markerLayer = L.layerGroup().addTo(mapObj); blockLayer = L.layerGroup().addTo(mapObj);
+  renderLegend();
+}
+function renderLegend() {
+  $('legendCats').innerHTML = CATEGORIES.map((c) => '<div class="legend-item"><span class="legend-dot" style="background:' + c.color + '"></span>' + esc(L10(c)) + '</div>').join('');
+  $('legendStatus').innerHTML = STATUSES.map((s) => '<div class="legend-item"><span class="legend-dot" style="background:#fff;border:3px solid ' + s.color + '"></span>' + esc(L10(s)) + '</div>').join('');
+}
+function renderMapMarkers() {
+  renderLegend();
+  if (!mapObj) return;
+  markerLayer.clearLayers(); blockLayer.clearLayers();
+  BLOCKS.forEach((b) => {
+    const m = L.marker([b.lat, b.lng], { icon: L.divIcon({ className: '', html: '<div style="background:#fff;border:1px dashed #475569;border-radius:6px;padding:1px 6px;font-size:11px;color:#334155;white-space:nowrap;transform:translate(-50%,-50%);display:inline-block">' + esc(blockName(b.id)) + ' (approx.)</div>', iconSize: [0, 0] }), keyboard: false, interactive: false });
+    blockLayer.addLayer(m);
+  });
+  const list = filterReports();
+  list.forEach((r) => {
+    const c = getCat(r.category), s = getStatus(r.status), p = reportLatLng(r);
+    const mk = L.circleMarker([p.lat, p.lng], { radius: 9, fillColor: c.color, fillOpacity: 0.9, color: s.color, weight: 4 });
+    const pop = h('div', {},
+      h('strong', { text: r.title }), h('br'),
+      h('span', { text: t('map_pop_cat') + ': ' + catName(r.category) }), h('br'),
+      h('span', { text: t('map_pop_loc') + ': ' + r.village + ', ' + blockName(r.block) }), h('br'),
+      h('span', { text: t('map_pop_date') + ': ' + fmtDate(r.submittedAt) }), h('br'),
+      h('span', { text: t('map_pop_status') + ': ' }), badgeEl(r.status), h('br'),
+      h('span', { text: t('map_pop_desc') + ': ' + (r.description.length > 160 ? r.description.slice(0, 157) + '…' : r.description) }), h('br'),
+      h('em', { class: 'text-muted', text: p.user ? t('map_user_approx') : t('map_approx') }), h('br'),
+      h('button', { type: 'button', class: 'btn btn-sm btn-outline-success mt-1', text: t('view'), onclick: () => showReportDetail(r.id) }));
+    mk.bindPopup(pop, { maxWidth: 280 });
+    markerLayer.addLayer(mk);
+  });
+  $('mapCount').textContent = list.length + ' ' + t('map_shown');
+  if (list.length) {
+    const pts = list.map((r) => { const p = reportLatLng(r); return [p.lat, p.lng]; });
+    try { mapObj.fitBounds(pts, { padding: [40, 40], maxZoom: 11 }); } catch (e) { /* ignore */ }
+  }
+}
+
+/* ======================================================================
+   9. Charts
+   ====================================================================== */
+const charts = {};
+function drawChart(key, canvasId, emptyId, cfg, hasData) {
+  const cv = $(canvasId), em = $(emptyId);
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+  if (!libs.Chart) { cv.parentElement.hidden = true; em.hidden = false; em.textContent = t('lib_err'); return; }
+  if (!hasData) { cv.parentElement.hidden = true; em.hidden = false; em.textContent = t('a_empty'); return; }
+  cv.parentElement.hidden = false; em.hidden = true;
+  charts[key] = new Chart(cv, cfg);
+}
+function weekStart(iso) { const d = new Date(iso); const day = (d.getDay() + 6) % 7; d.setDate(d.getDate() - day); d.setHours(0, 0, 0, 0); return d; }
+function renderCharts() {
+  const list = filterReports(); const s = computeStats(list); const has = list.length > 0;
+  const common = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+  if (!$('view-analytics').hidden) {
+    const cats = CATEGORIES.filter((c) => s.byCat[c.id]);
+    drawChart('cat', 'ch-cat', 'em-cat', { type: 'bar', data: { labels: cats.map((c) => L10(c)), datasets: [{ label: t('a_reports'), data: cats.map((c) => s.byCat[c.id]), backgroundColor: cats.map((c) => c.color) }] },
+      options: Object.assign({}, common, { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }) }, has);
+    const bl = BLOCKS.filter((b) => s.byBlock[b.id]);
+    drawChart('block', 'ch-block', 'em-block', { type: 'bar', data: { labels: bl.map((b) => blockName(b.id)), datasets: [{ label: t('a_reports'), data: bl.map((b) => s.byBlock[b.id]), backgroundColor: '#0f766e' }] },
+      options: Object.assign({}, common, { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }) }, has);
+    drawStatusChart('status', 'ch-status', 'em-status', s, true);
+    const wk = {}; list.forEach((r) => { const k = localISO(weekStart(r.submittedAt)).slice(0, 10); wk[k] = (wk[k] || 0) + 1; });
+    const keys = Object.keys(wk).sort();
+    drawChart('time', 'ch-time', 'em-time', { type: 'line', data: { labels: keys.map((k) => fmtDate(k + 'T00:00:00')), datasets: [{ label: t('a_reports'), data: keys.map((k) => wk[k]), borderColor: '#1d4ed8', backgroundColor: 'rgba(29,78,216,.15)', fill: true, tension: .25 }] },
+      options: Object.assign({}, common, { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }) }, has);
+    const top = s.sortedCats.slice(0, 5);
+    drawChart('top', 'ch-top', 'em-top', { type: 'bar', data: { labels: top.map((x) => catName(x[0])), datasets: [{ label: t('a_reports'), data: top.map((x) => x[1]), backgroundColor: top.map((x) => getCat(x[0]).color) }] },
+      options: Object.assign({}, common, { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }) }, has);
+  }
+  if (!$('view-admin').hidden && adminAuthed) drawStatusChart('admin', 'ch-admin', 'em-admin', computeStats(REPORTS), REPORTS.length > 0);
+}
+function drawStatusChart(key, cid, eid, s, has) {
+  drawChart(key, cid, eid, { type: 'doughnut', data: { labels: STATUSES.map((x) => L10(x)), datasets: [{ data: STATUSES.map((x) => s[x.id]), backgroundColor: STATUSES.map((x) => x.color) }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } }, has);
+}
+
+/* ======================================================================
+   10. Reports table, detail modal, CSV
+   ====================================================================== */
+const tableState = { page: 1, size: 8, search: '' };
+function getTableList() {
+  const q = tableState.search.trim().toLowerCase();
+  let list = filterReports();
+  if (q) list = list.filter((r) => r.id.toLowerCase().includes(q) || r.title.toLowerCase().includes(q));
+  return list.slice().sort((a, b) => (a.submittedAt < b.submittedAt ? 1 : a.submittedAt > b.submittedAt ? -1 : (a.id < b.id ? 1 : -1)));
+}
+function renderTable() {
+  const list = getTableList(); const total = list.length;
+  const pages = Math.max(1, Math.ceil(total / tableState.size));
+  if (tableState.page > pages) tableState.page = pages;
+  const start = (tableState.page - 1) * tableState.size; const rows = list.slice(start, start + tableState.size);
+  $('tbBody').innerHTML = rows.map((r) =>
+    '<tr><td><code>' + esc(r.id) + '</code></td><td>' + esc(r.title) + (r.isDemo ? ' <span class="badge-demo-tag">DEMO</span>' : ' <span class="badge-local-tag">LOCAL</span>') + '</td>' +
+    '<td>' + esc(catName(r.category)) + '</td><td>' + esc(blockName(r.block)) + '</td><td>' + esc(r.village) + '</td><td>' + esc(fmtDate(r.submittedAt)) + '</td>' +
+    '<td>' + badgeHtml(r.status) + '</td><td><button type="button" class="btn btn-sm btn-outline-success" data-view-id="' + esc(r.id) + '">' + esc(t('view')) + '</button></td></tr>').join('');
+  const em = $('tbEmpty'); em.hidden = total > 0; em.textContent = t('empty_reports');
+  $('tbInfo').textContent = total ? t('showing') + ' ' + (start + 1) + '–' + (start + rows.length) + ' ' + t('of') + ' ' + total : '';
+  const pg = $('tbPager'); pg.textContent = '';
+  if (pages > 1) {
+    const mk = (label, page, dis, cur) => { const b = h('button', { type: 'button', class: 'btn btn-sm ' + (cur ? 'btn-success' : 'btn-outline-secondary'), text: label }); if (dis) b.disabled = true; if (cur) b.setAttribute('aria-current', 'page'); b.addEventListener('click', () => { tableState.page = page; renderTable(); }); return b; };
+    pg.append(mk(t('prev'), tableState.page - 1, tableState.page === 1));
+    for (let i = 1; i <= pages; i++) pg.append(mk(String(i), i, false, i === tableState.page));
+    pg.append(mk(t('next'), tableState.page + 1, tableState.page === pages));
+  }
+}
+function timelineEl(r) {
+  const ul = h('ul', { class: 'timeline' });
+  r.history.forEach((e) => {
+    const st = getStatus(e.status);
+    const li = h('li', {}, badgeEl(e.status), h('span', { class: 'small text-muted ms-2', text: fmtDateTime(e.at) + (e.by ? ' · ' + t('by') + ' ' + e.by : '') }),
+      e.note ? h('div', { class: 'small', text: e.note }) : null);
+    li.style.setProperty('--dot', st ? st.color : '#64748b');
+    ul.append(li);
+  });
+  return ul;
+}
+function detailEl(r, admin) {
+  const wrap = h('div', {});
+  wrap.append(h('div', { class: 'd-flex flex-wrap gap-2 align-items-center mb-2' }, h('code', { class: 'fs-6', text: r.id }), badgeEl(r.status),
+    h('span', { class: r.isDemo ? 'badge-demo-tag' : 'badge-local-tag', text: r.isDemo ? t('d_demo') : t('d_local') })));
+  wrap.append(h('h3', { class: 'h5', text: r.title }));
+  const dl = h('dl', { class: 'row small mb-2' });
+  const add = (k, v) => { dl.append(h('dt', { class: 'col-sm-4', text: k }), h('dd', { class: 'col-sm-8', text: v })); };
+  add(t('th_cat'), catName(r.category)); add(t('th_block'), blockName(r.block)); add(t('th_village'), r.village);
+  add(t('d_incident'), fmtDate(r.incidentDate + 'T00:00:00')); add(t('d_submitted'), fmtDateTime(r.submittedAt));
+  if (r.photoName) add(t('d_photo'), r.photoName);
+  add(t('d_loc'), reportLatLng(r).user ? t('map_user_approx') : t('map_approx'));
+  if (admin) add(t('d_contact'), r.contact || '—');
+  wrap.append(dl);
+  wrap.append(h('h4', { class: 'h6', text: t('d_desc') }), h('p', { text: r.description }));
+  if (r.resolutionNote) wrap.append(h('h4', { class: 'h6', text: t('d_note') }), h('p', { text: r.resolutionNote }));
+  wrap.append(h('h4', { class: 'h6', text: t('d_history') }), timelineEl(r));
+  wrap.append(h('div', { class: 'alert alert-warning py-2 small mt-3 mb-0', text: t('d_unverified') }));
+  return wrap;
+}
+function showReportDetail(id) {
+  const r = getReportById(id); if (!r) return;
+  const b = $('detailBody'); b.textContent = ''; b.append(detailEl(r, false));
+  openModal('detailModal');
+}
+function csvCell(v) {
+  let s = String(v == null ? '' : v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;      // neutralise spreadsheet formulas
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+function exportReportsCSV() {
+  const list = getTableList();
+  if (!list.length) { toast(t('csv_empty'), 'err'); return; }
+  const head = ['Reference', 'Title', 'Category', 'Block', 'Village/Ward', 'Incident date', 'Submission date', 'Status', 'Description', 'Data type'];
+  const rows = list.map((r) => [r.id, r.title, getCat(r.category).en, r.block, r.village, r.incidentDate, r.submittedAt.slice(0, 10), getStatus(r.status).en, r.description, r.isDemo ? 'Demonstration sample' : 'Locally submitted (unverified)']);
+  const csv = '\uFEFF' + [head].concat(rows).map((row) => row.map(csvCell).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const a = h('a', { href: url, download: 'ramgarh-reports-' + todayISO() + '.csv' });
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast(t('csv_done'), 'ok');
+}
+function resetDemoData() {
+  REPORTS = seedReports(); saveReports();
+  try { sessionStorage.removeItem(SS.chat); } catch (e) { /* ignore */ }
+  tableState.page = 1; refreshAll(); toast(t('rs_done'), 'ok');
+}
+
+/* ======================================================================
+   11. Report form
+   ====================================================================== */
+let pendingReport = null;
+function setErr(field, msgKey) {
+  const input = { title: 'f-title', cat: 'f-cat', block: 'f-block', village: 'f-village', date: 'f-date', desc: 'f-desc', photo: 'f-photo', contact: 'f-contact', loc: 'f-lat' }[field];
+  const err = $('err-' + field);
+  if (input) { const el = $(input); el.classList.toggle('is-invalid', !!msgKey); if (msgKey) el.setAttribute('aria-describedby', 'err-' + field); }
+  if (field === 'loc') { $('f-lng').classList.toggle('is-invalid', !!msgKey); }
+  if (err) err.textContent = msgKey ? t(msgKey) : '';
+}
+function readForm() {
+  const latS = $('f-lat').value.trim(), lngS = $('f-lng').value.trim();
+  return { title: $('f-title').value.trim(), category: $('f-cat').value, block: $('f-block').value, village: $('f-village').value.trim(), description: $('f-desc').value.trim(),
+    incidentDate: $('f-date').value, latS, lngS, contact: $('f-contact').value.trim(), file: $('f-photo').files[0] || null };
+}
+function validateForm(d) {
+  const e = {};
+  if (d.title.length < 5 || d.title.length > 100) e.title = 'v_title';
+  if (!getCat(d.category)) e.cat = 'v_cat';
+  if (!getBlock(d.block)) e.block = 'v_block';
+  if (d.village.length < 2 || d.village.length > 60) e.village = 'v_village';
+  if (!d.incidentDate || d.incidentDate > todayISO() || d.incidentDate < '2020-01-01') e.date = 'v_date';
+  if (d.description.length < 20 || d.description.length > 1000) e.desc = 'v_desc';
+  if (d.file) {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(d.file.type)) e.photo = 'v_photo_type';
+    else if (d.file.size > 2 * 1024 * 1024) e.photo = 'v_photo_size';
+  }
+  d.lat = null; d.lng = null;
+  if (d.latS || d.lngS) {
+    const la = parseFloat(d.latS), ln = parseFloat(d.lngS);
+    if (!isFinite(la) || !isFinite(ln) || la < 23.2 || la > 24.1 || ln < 85.0 || ln > 86.0) e.loc = 'v_loc';
+    else { d.lat = Math.round(la * 1000) / 1000; d.lng = Math.round(ln * 1000) / 1000; }
+  }
+  if (d.contact && !(/^(\+?91[\s-]?)?[6-9]\d{9}$/.test(d.contact) || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.contact))) e.contact = 'v_contact';
+  return e;
+}
+function applyErrors(errs) {
+  ['title', 'cat', 'block', 'village', 'date', 'desc', 'photo', 'contact', 'loc'].forEach((f) => setErr(f, errs[f] || ''));
+  const first = Object.keys(errs)[0];
+  if (first) { const id = { title: 'f-title', cat: 'f-cat', block: 'f-block', village: 'f-village', date: 'f-date', desc: 'f-desc', photo: 'f-photo', contact: 'f-contact', loc: 'f-lat' }[first]; $(id).focus(); }
+}
+function buildPreview(d) {
+  const b = $('previewBody'); b.textContent = '';
+  const dl = h('dl', { class: 'row small mb-0' });
+  const add = (k, v) => dl.append(h('dt', { class: 'col-sm-4', text: k }), h('dd', { class: 'col-sm-8', text: v }));
+  add(t('l_title'), d.title); add(t('l_cat'), catName(d.category)); add(t('l_block'), blockName(d.block)); add(t('l_village'), d.village);
+  add(t('l_date'), fmtDate(d.incidentDate + 'T00:00:00')); add(t('l_desc'), d.description);
+  add(t('p_photo_name'), d.file ? d.file.name : t('p_none'));
+  add(t('l_loc'), d.lat != null ? d.lat + ', ' + d.lng : t('p_none'));
+  add(t('p_contact_priv'), d.contact ? '•••• (' + t('l_contact_hint').split('.')[0] + ')' : t('p_none'));
+  b.append(dl);
+  if (d.file) { const img = h('img', { class: 'img-thumbnail mt-2', alt: 'Preview of the selected photograph', style: 'max-height:140px' }); img.src = URL.createObjectURL(d.file); b.append(img); }
+  b.append(h('div', { class: 'alert alert-warning py-2 small mt-3 mb-0', text: t('done_note') }));
+}
+function clearForm() {
+  $('reportForm').reset(); applyErrors({}); $('photoPreview').hidden = true; $('descCount').textContent = '0/1000'; $('f-date').max = todayISO(); pendingReport = null;
+}
+
+/* ======================================================================
+   12. Tracking
+   ====================================================================== */
+function renderTrack(id) {
+  const box = $('trackResult'); box.textContent = '';
+  const m = /^RSA[-\s]?\d{4}[-\s]?\d{1,5}$/i.exec(id.trim());
+  if (!m) { box.append(h('div', { class: 'alert alert-danger', role: 'alert', text: t('tr_invalid') })); return; }
+  const r = getReportById(id);
+  if (!r) { box.append(h('div', { class: 'alert alert-warning', role: 'alert', text: t('tr_notfound') })); return; }
+  box.append(h('div', { class: 'panel' }, detailEl(r, false)));
+}
+
+/* ======================================================================
+   13. Resources + awareness
+   ====================================================================== */
+function searchResources(query, cat) {
+  const q = (query || '').trim().toLowerCase();
+  return RESOURCES.filter((r) => {
+    if (cat && r.cat !== cat) return false;
+    if (!q) return true;
+    const hay = [r.en, r.hi, r.den, r.dhi, RES_CATS[r.cat].en, RES_CATS[r.cat].hi, r.url].join(' ').toLowerCase();
+    return q.split(/\s+/).every((w) => hay.includes(w));
+  });
+}
+function renderResources() {
+  const list = searchResources($('res-search').value, $('res-cat').value);
+  $('resGrid').innerHTML = list.map((r) =>
+    '<div class="col-md-6 col-xl-4"><article class="panel res-card"><div><span class="badge text-bg-light border">' + esc(L10(RES_CATS[r.cat])) + '</span> <span class="badge text-bg-warning">' + esc(t('res_unv')) + '</span></div>' +
+    '<h3>' + esc(L10(r)) + '</h3><div class="small text-muted">' + esc(t('res_org')) + ': ' + esc(r.en) + '</div><p class="small mb-1 flex-grow-1">' + esc(lang === 'hi' ? r.dhi : r.den) + '</p>' +
+    '<div class="small text-muted">' + esc(t('res_lastv')) + ': ' + esc(t('res_notv')) + '</div>' +
+    '<a class="btn btn-sm btn-primary align-self-start" href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer">' + esc(t('res_visit')) + ' <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i><span class="visually-hidden"> – ' + esc(r.en) + '</span></a></article></div>').join('');
+  $('resEmpty').hidden = list.length > 0;
+}
+const AWARE = [
+  { id: 'water', icon: 'bi-droplet-fill', color: '#0284c7', res: 'jjm',
+    title: { en: 'Water conservation', hi: 'जल संरक्षण' },
+    msg: { en: 'Every drop counts. Small habits at home protect local water sources for everyone.', hi: 'हर बूँद कीमती है। घर की छोटी आदतें सबके लिए स्थानीय जल स्रोत बचाती हैं।' },
+    checks: [{ en: 'Repair dripping taps and pipe leaks quickly', hi: 'टपकते नल और पाइप का रिसाव जल्दी ठीक करें' }, { en: 'Close taps while brushing or washing', hi: 'ब्रश या बर्तन धोते समय नल बंद रखें' }, { en: 'Reuse suitable household water for plants', hi: 'घरेलू पानी को पौधों में दोबारा उपयोग करें' }, { en: 'Keep hand pumps, wells and ponds free of waste', hi: 'चापाकल, कुएँ और तालाब को कचरे से मुक्त रखें' }] },
+  { id: 'segregation', icon: 'bi-recycle', color: '#65a30d', res: 'sbm',
+    title: { en: 'Waste segregation', hi: 'कचरा पृथक्करण' },
+    msg: { en: 'Separating waste at home makes collection, composting and recycling much easier.', hi: 'घर पर कचरा अलग करने से संग्रहण, खाद बनाना और रीसाइक्लिंग आसान होता है।' },
+    checks: [{ en: 'Keep wet (kitchen/organic) and dry waste in separate bins', hi: 'गीला (रसोई/जैविक) और सूखा कचरा अलग डिब्बों में रखें' }, { en: 'Keep batteries, medicines and sharp items separate', hi: 'बैटरी, दवाइयाँ और नुकीली चीज़ें अलग रखें' }, { en: 'Hand waste to collection workers or designated points', hi: 'कचरा संग्रहण कर्मियों या निर्धारित स्थान पर दें' }] },
+  { id: 'recycle', icon: 'bi-arrow-repeat', color: '#0d9488', res: 'moef',
+    title: { en: 'Recycling and responsible disposal', hi: 'रीसाइक्लिंग और ज़िम्मेदार निपटान' },
+    msg: { en: 'Reuse first, recycle next, and dispose of the rest safely.', hi: 'पहले दोबारा उपयोग करें, फिर रीसाइक्लिंग, और बाकी का सुरक्षित निपटान करें।' },
+    checks: [{ en: 'Carry a cloth bag and reuse containers', hi: 'कपड़े का थैला रखें और डिब्बों का दोबारा उपयोग करें' }, { en: 'Give clean paper, plastic and metal to authorised collectors', hi: 'साफ़ कागज़, प्लास्टिक और धातु अधिकृत संग्राहकों को दें' }, { en: 'Do not throw electronics or batteries in drains or bins', hi: 'इलेक्ट्रॉनिक सामान या बैटरी नाली या कूड़ेदान में न डालें' }, { en: 'Compost kitchen scraps where possible', hi: 'जहाँ संभव हो रसोई के कचरे से खाद बनाएँ' }] },
+  { id: 'burning', icon: 'bi-fire', color: '#dc2626', res: 'jspcb',
+    title: { en: 'Avoid open waste burning', hi: 'खुले में कचरा जलाने से बचें' },
+    msg: { en: 'Burning plastic, tyres or rubbish releases harmful smoke that affects everyone nearby.', hi: 'प्लास्टिक, टायर या कचरा जलाने से हानिकारक धुआँ निकलता है जो आसपास सभी को प्रभावित करता है।' },
+    checks: [{ en: 'Never burn plastic, rubber or household rubbish', hi: 'प्लास्टिक, रबर या घरेलू कचरा कभी न जलाएँ' }, { en: 'Compost dry leaves or give them for collection', hi: 'सूखी पत्तियों की खाद बनाएँ या संग्रहण में दें' }, { en: 'Report persistent open burning to the local authority', hi: 'लगातार खुले में जलाने की सूचना स्थानीय प्राधिकरण को दें' }] },
+  { id: 'air', icon: 'bi-wind', color: '#475569', res: 'cpcb',
+    title: { en: 'Air-pollution awareness', hi: 'वायु प्रदूषण जागरूकता' },
+    msg: { en: 'Simple steps reduce dust and smoke. For air-quality information use official sources, not social-media rumours.', hi: 'सरल कदम धूल और धुआँ घटाते हैं। वायु गुणवत्ता की जानकारी के लिए आधिकारिक स्रोत देखें, अफ़वाहें नहीं।' },
+    checks: [{ en: 'Cover construction material and sprinkle water on dusty areas', hi: 'निर्माण सामग्री ढकें और धूल वाली जगह पर पानी छिड़कें' }, { en: 'Share rides or use cleaner transport when you can', hi: 'संभव हो तो साझा सवारी या स्वच्छ परिवहन अपनाएँ' }, { en: 'Check official air-quality information before strenuous outdoor activity', hi: 'कठिन बाहरी गतिविधि से पहले आधिकारिक वायु-गुणवत्ता जानकारी देखें' }, { en: 'If smoke or dust bothers you, speak to a health worker', hi: 'धुआँ या धूल से परेशानी हो तो स्वास्थ्यकर्मी से सलाह लें' }] },
+  { id: 'trees', icon: 'bi-tree-fill', color: '#15803d', res: 'moef',
+    title: { en: 'Tree and biodiversity protection', hi: 'वृक्ष और जैव विविधता संरक्षण' },
+    msg: { en: 'Trees cool our villages, hold soil and shelter birds and insects.', hi: 'पेड़ हमारे गाँवों को ठंडा रखते हैं, मिट्टी को थामते हैं और पक्षियों व कीटों को आश्रय देते हैं।' },
+    checks: [{ en: 'Plant native trees and look after them', hi: 'स्थानीय प्रजातियों के पेड़ लगाएँ और उनकी देखभाल करें' }, { en: 'Do not cut trees without the required permission', hi: 'आवश्यक अनुमति के बिना पेड़ न काटें' }, { en: 'Protect pond banks and wildlife habitats', hi: 'तालाब के किनारों और वन्यजीव आवासों की रक्षा करें' }] },
+  { id: 'hygiene', icon: 'bi-bandaid-fill', color: '#be185d', res: 'sbm',
+    title: { en: 'Sanitation and hygiene', hi: 'स्वच्छता और सफ़ाई' },
+    msg: { en: 'Clean hands, clean water and clean surroundings prevent many common illnesses.', hi: 'साफ़ हाथ, साफ़ पानी और साफ़ आसपास कई आम बीमारियों से बचाते हैं।' },
+    checks: [{ en: 'Wash hands with soap before meals and after using the toilet', hi: 'खाने से पहले और शौचालय के बाद साबुन से हाथ धोएँ' }, { en: 'Store drinking water in clean, covered containers', hi: 'पीने का पानी साफ़, ढके बर्तनों में रखें' }, { en: 'Do not let water stagnate around homes (mosquito prevention)', hi: 'घर के आसपास पानी जमा न होने दें (मच्छरों से बचाव)' }] },
+  { id: 'cleanup', icon: 'bi-people-fill', color: '#1d4ed8', res: 'district',
+    title: { en: 'Community clean-up campaigns', hi: 'सामुदायिक सफ़ाई अभियान' },
+    msg: { en: 'A neighbourhood clean-up works best when it is planned with the local authority.', hi: 'मोहल्ले की सफ़ाई तब सबसे अच्छी होती है जब स्थानीय प्राधिकरण के साथ योजना बनाई जाए।' },
+    checks: [{ en: 'Inform the ward or panchayat representative before you start', hi: 'शुरू करने से पहले वार्ड या पंचायत प्रतिनिधि को सूचित करें' }, { en: 'Wear gloves and sturdy footwear; avoid hazardous waste', hi: 'दस्ताने और मज़बूत जूते पहनें; ख़तरनाक कचरे से दूर रहें' }, { en: 'Segregate what you collect and arrange for pick-up', hi: 'जो इकट्ठा करें उसे अलग करें और उठाने की व्यवस्था करें' }, { en: 'Take before/after photos from a safe distance', hi: 'सुरक्षित दूरी से पहले/बाद की फ़ोटो लें' }] }
+];
+function loadChecks() { try { return JSON.parse(localStorage.getItem(LS.checks) || '{}') || {}; } catch (e) { return {}; } }
+function saveChecks(o) { try { localStorage.setItem(LS.checks, JSON.stringify(o)); } catch (e) { /* ignore */ } }
+function renderAwareness() {
+  const state = loadChecks();
+  const g = $('awGrid'); g.textContent = '';
+  AWARE.forEach((a) => {
+    const done = a.checks.filter((_, i) => state[a.id + ':' + i]).length;
+    const r = getRes(a.res);
+    const col = h('div', { class: 'col-md-6 col-xl-4' });
+    const card = h('article', { class: 'panel aw-card' });
+    const ico = h('div', { class: 'cat-ico' }, h('i', { class: 'bi ' + a.icon, 'aria-hidden': 'true' })); ico.style.background = a.color;
+    card.append(h('div', { class: 'd-flex align-items-center gap-2' }, ico, h('h3', { class: 'h6 mb-0', text: L10(a.title) })));
+    card.append(h('p', { class: 'small mb-1', text: L10(a.msg) }));
+    a.checks.forEach((c, i) => {
+      const cid = 'aw-' + a.id + '-' + i;
+      const cb = h('input', { class: 'form-check-input', type: 'checkbox', id: cid }); cb.checked = !!state[a.id + ':' + i];
+      cb.addEventListener('change', () => { const s = loadChecks(); if (cb.checked) s[a.id + ':' + i] = 1; else delete s[a.id + ':' + i]; saveChecks(s); renderAwareness(); const nb = $(cid); if (nb) nb.focus(); });
+      card.append(h('div', { class: 'form-check' }, cb, h('label', { class: 'form-check-label', for: cid, text: L10(c) })));
+    });
+    const pct = Math.round(done / a.checks.length * 100);
+    const bar = h('div', { class: 'progress', role: 'progressbar', 'aria-label': L10(a.title), 'aria-valuenow': String(pct), 'aria-valuemin': '0', 'aria-valuemax': '100' }, h('div', { class: 'progress-bar bg-success', style: 'width:' + pct + '%' }));
+    card.append(bar, h('div', { class: 'small text-muted', text: done + '/' + a.checks.length + ' ' + t('aw_progress') }));
+    card.append(h('a', { class: 'btn btn-sm btn-outline-primary align-self-start mt-auto', href: r.url, target: '_blank', rel: 'noopener noreferrer' }, t('aw_more') + ': ' + L10(r) + ' ', h('i', { class: 'bi bi-box-arrow-up-right', 'aria-hidden': 'true' })));
+    col.append(card); g.append(col);
+  });
+}
+
+/* ======================================================================
+   14. Admin (demo only – NOT secure)
+   ====================================================================== */
+let adminSel = null;
+function isAdminSession() { try { return sessionStorage.getItem(SS.admin) === '1'; } catch (e) { return false; } }
+function renderAdmin() {
+  $('adminLogin').hidden = adminAuthed; $('adminPanel').hidden = !adminAuthed;
+  if (!adminAuthed) return;
+  const s = computeStats(REPORTS);
+  $('adminStats').innerHTML = [
+    statCard('bi-collection-fill', '#0f766e', t('ad_t_total'), s.total, ''), statCard('bi-hourglass-split', '#1d4ed8', t('ad_t_open'), s.submitted + s.review, ''),
+    statCard('bi-megaphone-fill', '#b45309', t('ad_t_action'), s.action, ''), statCard('bi-patch-check-fill', '#15803d', t('ad_t_done'), s.resolved, ''), statCard('bi-x-octagon-fill', '#b91c1c', t('ad_t_rej'), s.rejected, '')
+  ].join('').replace(/col-xl-2/g, 'col-xl');
+  const f = $('ad-qfilter').value || 'open';
+  let list = REPORTS.slice();
+  if (f === 'open') list = list.filter((r) => r.status === 'submitted' || r.status === 'review'); else if (f !== 'all') list = list.filter((r) => r.status === f);
+  list.sort((a, b) => (a.submittedAt < b.submittedAt ? -1 : 1));
+  const q = $('adminQueue'); q.textContent = '';
+  if (!list.length) q.append(h('div', { class: 'text-muted small', text: t('ad_queue_empty') }));
+  list.forEach((r) => {
+    const b = h('button', { type: 'button', class: 'queue-item' + (r.id === adminSel ? ' active' : '') }, h('div', { class: 'small' }, h('code', { text: r.id }), ' ', badgeEl(r.status)), h('div', { class: 'small fw-semibold', text: r.title }), h('div', { class: 'small text-muted', text: catName(r.category) + ' · ' + blockName(r.block) }));
+    b.addEventListener('click', () => { adminSel = r.id; renderAdmin(); });
+    q.append(b);
+  });
+  renderAdminDetail();
+  renderCharts();
+}
+function renderAdminDetail() {
+  const box = $('adminDetail'); box.textContent = '';
+  const r = adminSel ? getReportById(adminSel) : null;
+  if (!r) { box.append(h('div', { class: 'text-muted', text: t('ad_select') })); return; }
+  box.append(detailEl(r, true));
+  const sel = h('select', { class: 'form-select', id: 'ad-status' }); STATUSES.forEach((s) => sel.append(opt(s.id, L10(s), s.id === r.status)));
+  const note = h('textarea', { class: 'form-control', id: 'ad-note', rows: '3', maxlength: '500' });
+  const err = h('div', { class: 'text-danger small mt-1', role: 'alert', id: 'ad-err' });
+  const save = h('button', { type: 'button', class: 'btn btn-success mt-2', text: t('ad_save') });
+  save.addEventListener('click', () => {
+    const st = sel.value, n = note.value.trim();
+    err.textContent = '';
+    if (!adminAuthed) { err.textContent = t('ad_denied'); return; }
+    if ((st === 'resolved' || st === 'rejected') && n.length < 5) { err.textContent = t('ad_note_req'); note.focus(); return; }
+    if (st === r.status && !n) { err.textContent = t('ad_nochange'); return; }
+    if (updateReportStatus(r.id, st, n, 'admin-demo')) { toast(t('ad_saved'), 'ok'); refreshAll(); } else toast(t('save_fail'), 'err');
+  });
+  box.append(h('hr'), h('h4', { class: 'h6', text: t('ad_status_ctrl') }),
+    h('label', { class: 'form-label small', for: 'ad-status', text: t('f_status') }), sel,
+    h('label', { class: 'form-label small mt-2', for: 'ad-note', text: t('ad_note') }), note,
+    h('div', { class: 'form-text', text: t('ad_verify_hint') }), err, save);
+}
+
+/* ======================================================================
+   15. Chatbot (rule-based demo). A real AI model can be attached by
+       pointing CHATBOT_CONFIG at a SECURE BACKEND that holds the API key.
+       Never put a secret API key in this client-side file.
+   ====================================================================== */
+const CHATBOT_CONFIG = { mode: 'local', endpoint: '' };   // set mode:'remote' and endpoint:'https://your-server/api/chat' in a future version
+const SUGGESTED = ['हमारे गाँव का चापाकल खराब है, क्या करें?', 'How do I report garbage accumulation?', 'Where can I find Ramgarh government services?', 'How can I report a damaged road?', 'How can I check my complaint status?', 'How can I help reduce air pollution in Ramgarh?', 'Where can I find official drinking-water information?'];
+const NOT_OFFICIAL = { en: 'Note: this prototype does not send reports to any department.', hi: 'ध्यान दें: यह प्रोटोटाइप किसी विभाग को रिपोर्ट नहीं भेजता।' };
+const INTENTS = [
+  { id: 'emergency', kw: ['emergency', 'ambulance', 'police', 'accident', 'injured', 'heart attack', 'इमरजेंसी', 'एम्बुलेंस', 'एंबुलेंस', 'पुलिस', 'दुर्घटना', 'आपातकाल'], res: [],
+    en: 'This prototype is not an emergency service and cannot send help.\nIf someone is in danger, contact your local emergency services immediately (for example the national emergency number 112) or go to the nearest hospital or police station.\nOnce everyone is safe, you may record the issue through the Report form.',
+    hi: 'यह प्रोटोटाइप आपातकालीन सेवा नहीं है और मदद नहीं भेज सकता।\nयदि किसी की जान खतरे में है तो तुरंत अपनी स्थानीय आपातकालीन सेवा (जैसे राष्ट्रीय आपातकालीन नंबर 112) से संपर्क करें या नज़दीकी अस्पताल/थाने जाएँ।\nसब सुरक्षित होने के बाद आप समस्या को रिपोर्ट फ़ॉर्म में दर्ज कर सकते हैं।' },
+  { id: 'tracking', kw: ['complaint status', 'check my complaint', 'track', 'tracking', 'report status', 'reference number', 'status', 'स्थिति', 'ट्रैक', 'कहां तक', 'कहाँ तक', 'sthiti', 'mera complaint', 'संदर्भ क्रमांक', 'रेफरेंस'], res: [] },
+  { id: 'handpump', kw: ['hand pump', 'handpump', 'chapakal', 'chapakal', 'चापाकल', 'हैंडपंप', 'हैंड पंप', 'नल खराब', 'tubewell', 'borewell', 'बोरवेल', 'नलकूप'], res: ['district', 'jjm', 'jharkhand'], cat: 'water',
+    en: 'To report a broken hand pump (chapakal):\n1. Note the exact place: village/ward, block and a nearby landmark.\n2. Describe the problem (no water, broken handle, dirty water) and since when.\n3. Take a photo if it is safe to do so.\n4. Use “Report an Issue” in this prototype to keep a record in your browser.\n5. For an actual complaint, contact the district or water-supply department through the official channels linked below. This prototype does not send your report to any department.\nUntil it is repaired, use a safe alternative source of drinking water.',
+    hi: 'खराब चापाकल की सूचना देने के लिए:\n1. सही जगह नोट करें: गाँव/वार्ड, प्रखंड और पास की कोई पहचान।\n2. समस्या लिखें (पानी नहीं आ रहा, हैंडल टूटा, गंदा पानी) और कब से।\n3. सुरक्षित हो तो फ़ोटो लें।\n4. इस प्रोटोटाइप में “समस्या दर्ज करें” से अपने ब्राउज़र में रिकॉर्ड रखें।\n5. वास्तविक शिकायत के लिए नीचे दिए आधिकारिक माध्यमों से ज़िला या पेयजल विभाग से संपर्क करें। यह प्रोटोटाइप आपकी रिपोर्ट किसी विभाग को नहीं भेजता।\nमरम्मत होने तक पीने के लिए सुरक्षित वैकल्पिक स्रोत का उपयोग करें।' },
+  { id: 'water', kw: ['drinking water', 'water supply', 'water information', 'jal jeevan', 'pani nahi', 'pani ki supply', 'पेयजल', 'पीने का पानी', 'जलापूर्ति', 'पानी नहीं', 'जल जीवन', 'tap water', 'नल जल'], res: ['jjm', 'district', 'jharkhand'], cat: 'water',
+    en: 'For official drinking-water information, start with the Jal Jeevan Mission portal, then the Ramgarh district and Jharkhand government sites linked below.\nIf your water supply has stopped or is irregular: note the place and time, check whether neighbours are affected, and record it using the Report form here.\nFor an official complaint, use the official channels. Eligibility and service rules are decided by the departments, not by this prototype.',
+    hi: 'पेयजल की आधिकारिक जानकारी के लिए पहले जल जीवन मिशन पोर्टल, फिर नीचे दिए रामगढ़ ज़िला और झारखंड सरकार की साइटें देखें।\nयदि पानी की आपूर्ति बंद या अनियमित है: जगह और समय नोट करें, देखें कि पड़ोसी भी प्रभावित हैं या नहीं, और यहाँ रिपोर्ट फ़ॉर्म में दर्ज करें।\nआधिकारिक शिकायत के लिए आधिकारिक माध्यम उपयोग करें। पात्रता और सेवा नियम विभाग तय करते हैं, यह प्रोटोटाइप नहीं।' },
+  { id: 'leak', kw: ['leak', 'leakage', 'pipeline', 'water quality', 'dirty water', 'contaminated', 'pani ganda', 'रिसाव', 'लीकेज', 'पाइप', 'दूषित', 'गंदा पानी', 'पानी गंदा'], res: ['jjm', 'district'], cat: 'leak',
+    en: 'For water leakage or suspected water-quality problems:\n1. Note the location and what you see (leak, colour, smell, taste).\n2. Do not drink water you suspect is contaminated; use a safe alternative and boil or treat water as advised by health workers.\n3. Record it using the Report form here.\n4. Contact the water-supply department or district administration through the official links below.\nThis prototype cannot test water or confirm contamination.',
+    hi: 'पानी के रिसाव या संदिग्ध गुणवत्ता की समस्या में:\n1. जगह और जो दिखे (रिसाव, रंग, गंध, स्वाद) नोट करें।\n2. जिस पानी पर संदेह हो उसे न पिएँ; सुरक्षित विकल्प लें और स्वास्थ्यकर्मियों की सलाह के अनुसार पानी उबालें या उपचारित करें।\n3. यहाँ रिपोर्ट फ़ॉर्म में दर्ज करें।\n4. नीचे दिए आधिकारिक लिंक से जलापूर्ति विभाग या ज़िला प्रशासन से संपर्क करें।\nयह प्रोटोटाइप पानी की जाँच या संदूषण की पुष्टि नहीं कर सकता।' },
+  { id: 'garbage', kw: ['garbage', 'kachra', 'kuda', 'waste', 'trash', 'dustbin', 'landfill', 'कचरा', 'कूड़ा', 'कूड़े', 'सफाई कर्मी'], res: ['sbm', 'district'], cat: 'garbage',
+    en: 'To report garbage accumulation:\n1. Note the exact location (village/ward, block, landmark).\n2. Take a photo if it is safe; avoid touching waste with bare hands.\n3. Do not burn the rubbish – open burning harms health and the environment.\n4. Submit it through the Report form here to keep a record.\n5. Contact the relevant local authority (municipal body, panchayat or ward office) through the official links below.',
+    hi: 'कचरा जमा होने की सूचना देने के लिए:\n1. सही जगह नोट करें (गाँव/वार्ड, प्रखंड, पहचान)।\n2. सुरक्षित हो तो फ़ोटो लें; कचरे को नंगे हाथ न छुएँ।\n3. कचरा न जलाएँ – खुले में जलाना सेहत और पर्यावरण के लिए हानिकारक है।\n4. रिकॉर्ड के लिए यहाँ रिपोर्ट फ़ॉर्म से दर्ज करें।\n5. नीचे दिए आधिकारिक लिंक से संबंधित स्थानीय प्राधिकरण (नगर निकाय, पंचायत या वार्ड कार्यालय) से संपर्क करें।' },
+  { id: 'drain', kw: ['drain', 'nali', 'sewage', 'sewer', 'waterlogging', 'clogged', 'sanitation', 'toilet', 'नाली', 'सीवर', 'जलजमाव', 'जल जमाव', 'शौचालय', 'स्वच्छता'], res: ['sbm', 'district'], cat: 'drain',
+    en: 'For blocked drains or sanitation problems:\n1. Note the location and describe the blockage or standing water.\n2. Keep children away from stagnant or sewage water.\n3. Avoid throwing plastic or waste into drains.\n4. Record it using the Report form here, and contact the local authority through the official links below.',
+    hi: 'बंद नाली या स्वच्छता की समस्या में:\n1. जगह नोट करें और रुकावट या जमा पानी का वर्णन करें।\n2. बच्चों को जमे या गंदे पानी से दूर रखें।\n3. नालियों में प्लास्टिक या कचरा न डालें।\n4. यहाँ रिपोर्ट फ़ॉर्म में दर्ज करें और नीचे दिए आधिकारिक लिंक से स्थानीय प्राधिकरण से संपर्क करें।' },
+  { id: 'road', kw: ['road', 'sadak', 'pothole', 'gaddha', 'bridge', 'सड़क', 'गड्ढा', 'गड्ढे', 'पुल', 'सड़क टूटी'], res: ['district', 'jharkhand'], cat: 'road',
+    en: 'To report a damaged road or pothole:\n1. Note the road name or nearby landmark, village/ward and block.\n2. Take photos from a safe place away from traffic.\n3. Describe the damage and any danger (for example near a school or turn).\n4. Submit it via the Report form here, then contact the relevant local authority or department through the official links below.',
+    hi: 'क्षतिग्रस्त सड़क या गड्ढे की सूचना देने के लिए:\n1. सड़क का नाम या पास की पहचान, गाँव/वार्ड और प्रखंड नोट करें।\n2. यातायात से दूर सुरक्षित जगह से फ़ोटो लें।\n3. क्षति और खतरे का वर्णन करें (जैसे स्कूल या मोड़ के पास)।\n4. यहाँ रिपोर्ट फ़ॉर्म से दर्ज करें, फिर नीचे दिए आधिकारिक लिंक से संबंधित स्थानीय प्राधिकरण या विभाग से संपर्क करें।' },
+  { id: 'light', kw: ['streetlight', 'street light', 'lamp post', 'batti', 'स्ट्रीट', 'बत्ती', 'लाइट खराब', 'लाइट बंद'], res: ['district', 'jharkhand'], cat: 'light',
+    en: 'For non-working streetlights:\n1. Note the lane or pole location (and pole number if visible).\n2. Mention how long it has been off.\n3. Record it using the Report form here and contact the local authority responsible for street lighting through the official links below.\nDo not touch poles or wires yourself.',
+    hi: 'बंद स्ट्रीटलाइट के लिए:\n1. गली या खंभे की जगह नोट करें (खंभा संख्या दिखे तो वह भी)।\n2. कितने समय से बंद है, लिखें।\n3. यहाँ रिपोर्ट फ़ॉर्म में दर्ज करें और नीचे दिए आधिकारिक लिंक से स्ट्रीटलाइट के लिए ज़िम्मेदार स्थानीय प्राधिकरण से संपर्क करें।\nखंभों या तारों को स्वयं न छुएँ।' },
+  { id: 'air', kw: ['air pollution', 'pollution', 'dust', 'smoke', 'aqi', 'air quality', 'pradushan', 'dhool', 'dhuan', 'mask', 'प्रदूषण', 'धूल', 'धुआं', 'धुआँ', 'वायु', 'हवा'], res: ['cpcb', 'jspcb'], cat: 'air',
+    en: 'About air pollution:\n• Precautions: on days official sources report poor air, limit strenuous outdoor activity; people with breathing problems should speak to a health worker.\n• How you can help: do not burn waste, cover construction material, share rides, and plant trees.\n• To report visible smoke or dust: note the place, time and source, and use the Report form here.\n• For official air-quality information, see the Central and Jharkhand pollution control boards linked below. This prototype shows no pollution readings.',
+    hi: 'वायु प्रदूषण के बारे में:\n• सावधानियाँ: जिन दिनों आधिकारिक स्रोत खराब हवा बताएँ, कठिन बाहरी गतिविधि सीमित करें; साँस की समस्या वाले लोग स्वास्थ्यकर्मी से सलाह लें।\n• आप कैसे मदद करें: कचरा न जलाएँ, निर्माण सामग्री ढकें, साझा सवारी करें और पेड़ लगाएँ।\n• दिखाई देने वाले धुएँ या धूल की सूचना: जगह, समय और स्रोत नोट करें और यहाँ रिपोर्ट फ़ॉर्म भरें।\n• आधिकारिक वायु-गुणवत्ता जानकारी के लिए नीचे दिए केंद्रीय और झारखंड प्रदूषण नियंत्रण बोर्ड देखें। यह प्रोटोटाइप कोई प्रदूषण रीडिंग नहीं दिखाता।' },
+  { id: 'burn', kw: ['open burning', 'burning', 'fire', 'kachra jalana', 'stubble', 'जलाना', 'जला', 'आग', 'पराली', 'कचरा जलाना'], res: ['jspcb', 'cpcb'], cat: 'burn',
+    en: 'About open burning and fire hazards:\n• Do not burn plastic, tyres or rubbish yourself.\n• If there is an active fire or danger to life, contact local emergency services immediately (for example 112). This prototype is not an emergency service.\n• For persistent open burning, note the place, time and what is burning, record it using the Report form here, and contact the local authority or the state pollution control board via the links below.',
+    hi: 'खुले में जलाने और आग के खतरे के बारे में:\n• प्लास्टिक, टायर या कचरा स्वयं न जलाएँ।\n• सक्रिय आग या जान के खतरे में तुरंत स्थानीय आपातकालीन सेवा (जैसे 112) से संपर्क करें। यह प्रोटोटाइप आपातकालीन सेवा नहीं है।\n• लगातार खुले में जलाने पर जगह, समय और क्या जल रहा है नोट करें, यहाँ रिपोर्ट फ़ॉर्म भरें और नीचे दिए लिंक से स्थानीय प्राधिकरण या राज्य प्रदूषण नियंत्रण बोर्ड से संपर्क करें।' },
+  { id: 'health', kw: ['health', 'hygiene', 'handwash', 'mosquito', 'dengue', 'malaria', 'disease', 'स्वास्थ्य', 'हाथ धोना', 'मच्छर', 'बीमारी'], res: ['india', 'sbm'], cat: 'health',
+    en: 'For public health and hygiene: wash hands with soap, drink safe water, keep surroundings free of stagnant water and waste, and use toilets.\nThis prototype gives general information only and cannot diagnose illness. If you or someone else feels unwell, please see a doctor or local health worker.\nYou can record a community hygiene concern through the Report form here.',
+    hi: 'जन-स्वास्थ्य और स्वच्छता के लिए: साबुन से हाथ धोएँ, सुरक्षित पानी पिएँ, आसपास जमा पानी और कचरा न रहने दें और शौचालय का उपयोग करें।\nयह प्रोटोटाइप केवल सामान्य जानकारी देता है और बीमारी की पहचान नहीं कर सकता। स्वयं या किसी को अस्वस्थ लगे तो डॉक्टर या स्थानीय स्वास्थ्यकर्मी से मिलें।\nसामुदायिक स्वच्छता संबंधी चिंता यहाँ रिपोर्ट फ़ॉर्म में दर्ज कर सकते हैं।' },
+  { id: 'power', kw: ['electricity', 'bijli', 'power cut', 'transformer', 'pole', 'voltage', 'बिजली', 'ट्रांसफार्मर', 'खंभा', 'खम्भा'], res: ['jharkhand', 'district'], cat: 'power',
+    en: 'For electricity or infrastructure problems:\n1. Note the location and describe the problem (outage, damaged pole, sparking).\n2. Stay away from fallen or damaged wires and call emergency services if there is danger to life.\n3. Record it using the Report form here and contact the electricity utility or local authority through the official links below.',
+    hi: 'बिजली या ढाँचे की समस्या में:\n1. जगह नोट करें और समस्या बताएँ (बिजली गुल, क्षतिग्रस्त खंभा, चिंगारी)।\n2. गिरे या क्षतिग्रस्त तारों से दूर रहें और जान के खतरे में आपातकालीन सेवा को कॉल करें।\n3. यहाँ रिपोर्ट फ़ॉर्म में दर्ज करें और नीचे दिए आधिकारिक लिंक से बिजली विभाग या स्थानीय प्राधिकरण से संपर्क करें।' },
+  { id: 'schemes', kw: ['government service', 'government services', 'scheme', 'yojana', 'portal', 'pension', 'ration', 'certificate', 'benefit', 'sarkari', 'सरकारी सेवा', 'सरकारी सेवाएँ', 'योजना', 'प्रमाण पत्र', 'प्रमाणपत्र', 'लाभ', 'सरकारी'], res: ['district', 'jharkhand', 'services', 'india'], cat: 'gov',
+    en: 'For Ramgarh and Jharkhand government services and schemes, please use the verified government portals linked below (district administration, state government and the national services portals).\nWhether you are eligible for a scheme depends on the official scheme rules, which can change. This prototype cannot decide eligibility or promise any benefit.',
+    hi: 'रामगढ़ और झारखंड की सरकारी सेवाओं और योजनाओं के लिए नीचे दिए सत्यापित सरकारी पोर्टल (ज़िला प्रशासन, राज्य सरकार और राष्ट्रीय सेवा पोर्टल) देखें।\nकिसी योजना के लिए आप पात्र हैं या नहीं, यह आधिकारिक योजना नियमों पर निर्भर है, जो बदल सकते हैं। यह प्रोटोटाइप पात्रता तय नहीं कर सकता और किसी लाभ का वादा नहीं करता।' },
+  { id: 'bio', kw: ['tree', 'biodiversity', 'forest', 'wildlife', 'plant', 'pond', 'talab', 'पेड़', 'जैव', 'जंगल', 'पौधे', 'वृक्ष', 'तालाब'], res: ['moef', 'jspcb'], cat: 'bio',
+    en: 'For trees, biodiversity and local environment concerns: plant native trees, do not cut trees without the required permission, and protect ponds and wildlife habitats.\nYou can record a concern (for example tree cutting near a pond) through the Report form here and read official guidance via the links below.',
+    hi: 'पेड़, जैव विविधता और स्थानीय पर्यावरण के लिए: स्थानीय प्रजातियों के पेड़ लगाएँ, आवश्यक अनुमति के बिना पेड़ न काटें और तालाबों व वन्यजीव आवासों की रक्षा करें।\nकोई चिंता (जैसे तालाब के पास पेड़ कटना) यहाँ रिपोर्ट फ़ॉर्म में दर्ज कर सकते हैं और नीचे दिए लिंक से आधिकारिक मार्गदर्शन पढ़ सकते हैं।' },
+  { id: 'about', kw: ['are you ai', 'real ai', 'chatgpt', 'who are you', 'what are you', 'आप कौन', 'तुम कौन', 'क्या आप ai'], res: [],
+    en: 'I am a demo assistant. I use simple keyword matching and prepared answers stored in this web page – I am not a generative AI model, I can be wrong, and I am not an official source.\nA real AI service could be connected in a future version through a secure backend (never by placing secret keys in the page).',
+    hi: 'मैं एक डेमो सहायक हूँ। मैं इस वेब पेज में रखे सरल कीवर्ड मिलान और तैयार उत्तरों से काम करता हूँ – मैं जनरेटिव AI मॉडल नहीं हूँ, मुझसे गलती हो सकती है और मैं आधिकारिक स्रोत नहीं हूँ।\nभविष्य के संस्करण में सुरक्षित बैकएंड के ज़रिए असली AI सेवा जोड़ी जा सकती है (पेज में गुप्त कुंजी रखकर कभी नहीं)।' },
+  { id: 'help', kw: ['what can you do', 'how can you help', 'मदद', 'सहायता', 'क्या कर सकते'], res: [],
+    en: 'I can give general guidance on: broken hand pumps and drinking water, leakage, garbage, drains, roads, streetlights, air pollution, open burning, health and hygiene, electricity, government services, trees and biodiversity.\nI can also look up a report by its reference number (for example RSA-2026-00001) and point you to official resources.',
+    hi: 'मैं इन विषयों पर सामान्य मार्गदर्शन दे सकता हूँ: खराब चापाकल और पेयजल, रिसाव, कचरा, नालियाँ, सड़कें, स्ट्रीटलाइट, वायु प्रदूषण, खुले में जलाना, स्वास्थ्य व स्वच्छता, बिजली, सरकारी सेवाएँ, पेड़ और जैव विविधता।\nमैं संदर्भ क्रमांक (जैसे RSA-2026-00001) से रिपोर्ट भी खोज सकता हूँ और आधिकारिक संसाधन बता सकता हूँ।' },
+  { id: 'thanks', kw: ['thanks', 'thank you', 'shukriya', 'धन्यवाद', 'शुक्रिया'], res: [],
+    en: 'You are welcome! Ask me anything else about water, sanitation, roads, environment or government services.', hi: 'आपका स्वागत है! पानी, सफ़ाई, सड़क, पर्यावरण या सरकारी सेवाओं के बारे में और कुछ पूछें।' },
+  { id: 'greet', kw: ['hello', 'hi', 'hey', 'hii', 'namaste', 'नमस्ते', 'नमस्कार'], res: [],
+    en: 'Hello! I am the Ramgarh Sahayak AI demo assistant. Ask me about water, sanitation, roads, environment or government services.', hi: 'नमस्ते! मैं रामगढ़ सहाय्यक AI डेमो सहायक हूँ। पानी, सफ़ाई, सड़क, पर्यावरण या सरकारी सेवाओं के बारे में पूछें।' }
+];
+const REPORT_FALLBACK = {
+  id: 'report', res: ['district'], cat: '',
+  en: 'To report a community issue: open “Report an Issue”, choose a category, give the location (block and village/ward), describe the problem, and submit. You will receive a reference number.\nThis prototype saves reports only in your browser and does not send them to any department. Use the official links below for real complaints.',
+  hi: 'समुदाय की समस्या दर्ज करने के लिए: “समस्या दर्ज करें” खोलें, श्रेणी चुनें, स्थान (प्रखंड और गाँव/वार्ड) दें, समस्या लिखें और जमा करें। आपको संदर्भ क्रमांक मिलेगा।\nयह प्रोटोटाइप रिपोर्ट केवल आपके ब्राउज़र में सहेजता है, किसी विभाग को नहीं भेजता। वास्तविक शिकायत के लिए नीचे दिए आधिकारिक लिंक उपयोग करें।' };
+const REPORT_WORDS = ['report', 'complaint', 'file a', 'submit', 'शिकायत', 'रिपोर्ट', 'दर्ज', 'shikayat'];
+const HINGLISH = ['kya', 'hai', 'hain', 'kaise', 'kare', 'karein', 'karna', 'mera', 'meri', 'hamara', 'hamare', 'nahi', 'kharab', 'gaon', 'gaanv', 'sadak', 'kachra', 'pani', 'bijli', 'shikayat', 'kahan', 'kripya', 'batao', 'bataiye', 'chahiye', 'mujhe', 'aap', 'mein', 'chapakal', 'sthiti'];
+function normalize(s) { return s.toLowerCase().replace(/[-_]/g, ' ').replace(/[?.!,;:()"'।]/g, ' ').replace(/\s+/g, ' ').trim(); }
+function detectLang(msg) {
+  if (/[\u0900-\u097F]/.test(msg)) return 'hi';
+  const toks = normalize(msg).split(' ');
+  return toks.some((w) => HINGLISH.includes(w)) ? 'hi' : 'en';
+}
+function matchKw(text, tokens, kw) { return /^[a-z0-9]{1,3}$/.test(kw) ? tokens.includes(kw) : text.includes(kw); }
+function scoreIntent(it, text, tokens) { let s = 0; it.kw.forEach((k) => { if (matchKw(text, tokens, k)) s += k.length > 5 ? 2 : 1; }); return s; }
+function trackingAnswer(msg, l) {
+  const m = /RSA[-\s]?(\d{4})[-\s]?(\d{1,5})/i.exec(msg);
+  if (!m) return { text: l === 'hi' ? 'अपनी रिपोर्ट की स्थिति देखने के लिए कृपया संदर्भ क्रमांक लिखें (जैसे RSA-2026-00001)। मैं केवल इस ब्राउज़र में सहेजी रिपोर्ट खोज सकता हूँ।' : 'To check a report, please send your reference number (for example RSA-2026-00001). I can only search reports stored in this browser.', links: [], action: { type: 'view', view: 'track' } };
+  const r = getReportById(m[0]);
+  const id = 'RSA-' + m[1] + '-' + m[2].padStart(5, '0');
+  if (!r) return { text: l === 'hi' ? id + ' नाम की कोई रिपोर्ट इस ब्राउज़र में नहीं मिली। कृपया क्रमांक जाँचें। ध्यान दें: मैं केवल इसी ब्राउज़र के डेमो रिकॉर्ड खोज सकता हूँ।' : 'I could not find a report with reference ' + id + ' in this browser. Please check the number. I can only search demo records stored in this browser.', links: [], action: null };
+  const last = r.history[r.history.length - 1];
+  const sName = (l === 'hi' ? getStatus(r.status).hi : getStatus(r.status).en);
+  const cName = (l === 'hi' ? getCat(r.category).hi : getCat(r.category).en);
+  const text = (l === 'hi'
+    ? ['संदर्भ: ' + r.id, 'शीर्षक: ' + r.title, 'श्रेणी: ' + cName, 'स्थान: ' + r.village + ', ' + (getBlock(r.block).hi), 'वर्तमान स्थिति: ' + sName, 'अंतिम अपडेट: ' + fmtDate(last.at), 'यह स्थिति केवल इस ब्राउज़र के डेमो रिकॉर्ड से है; यह किसी सरकारी विभाग की पुष्टि नहीं है।']
+    : ['Reference: ' + r.id, 'Title: ' + r.title, 'Category: ' + cName, 'Location: ' + r.village + ', ' + r.block, 'Current status: ' + sName, 'Last update: ' + fmtDate(last.at), 'This status comes only from demo records in this browser; it is not confirmation from any government department.']).join('\n');
+  return { text, links: [], action: { type: 'detail', id: r.id } };
+}
+function getChatbotResponse(message) {
+  const l = detectLang(message);
+  const text = normalize(message), tokens = text.split(' ');
+  if (/RSA[-\s]?\d{4}[-\s]?\d{1,5}/i.test(message)) return Object.assign({ lang: l }, trackingAnswer(message, l));
+  let best = null, bestScore = 0;
+  const emergency = INTENTS[0];
+  if (scoreIntent(emergency, text, tokens) > 0) { best = emergency; bestScore = 99; }
+  else INTENTS.forEach((it) => { const s = scoreIntent(it, text, tokens); if (s > bestScore) { best = it; bestScore = s; } });
+  if (!best || bestScore === 0) {
+    if (REPORT_WORDS.some((w) => text.includes(w))) best = REPORT_FALLBACK;
+    else return { lang: l, text: l === 'hi' ? 'क्षमा करें, मैं आपका सवाल समझ नहीं पाया। कृपया दूसरे शब्दों में लिखें (जैसे “चापाकल खराब”, “कचरा”, “सड़क”), या संसाधन केंद्र में आधिकारिक जानकारी देखें।' : 'Sorry, I did not understand that. Please rephrase your question (for example “broken hand pump”, “garbage”, “road”), or check the Resource Centre for official information.', links: ['district', 'india'], action: null };
+  }
+  if (best.id === 'tracking') return Object.assign({ lang: l }, trackingAnswer(message, l));
+  const extra = (best.cat !== undefined && best.id !== 'emergency') ? '' : '';
+  return { lang: l, text: best[l] + extra, links: best.res || [], action: best.cat ? { type: 'report', cat: best.cat } : null };
+}
+async function askChatbot(message) {
+  if (CHATBOT_CONFIG.mode === 'remote' && CHATBOT_CONFIG.endpoint) {
+    try {   // Future: the backend holds the API key; the browser only sends the question.
+      const res = await fetch(CHATBOT_CONFIG.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, language: lang, history: chatHistory.slice(-6).map((m) => ({ role: m.role, text: m.text })) }) });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      return { lang, text: String(data.answer || ''), links: Array.isArray(data.links) ? data.links.filter((x) => getRes(x)) : [], action: null };
+    } catch (e) { const local = getChatbotResponse(message); local.text = (lang === 'hi' ? 'AI सेवा अभी उपलब्ध नहीं है; स्थानीय उत्तर दे रहा हूँ।\n' : 'The AI service is unavailable; using local answers.\n') + local.text; return local; }
+  }
+  return getChatbotResponse(message);
+}
+let chatHistory = [];
+function welcomeMsg() { return { role: 'bot', lang: 'hi', text: 'नमस्ते! मैं रामगढ़ सहाय्यक AI हूँ। आप रामगढ़ में पानी, सफाई, सड़क, बिजली, पर्यावरण और सरकारी सेवाओं से संबंधित सवाल पूछ सकते हैं।', links: [], action: null }; }
+function saveChat() { try { sessionStorage.setItem(SS.chat, JSON.stringify(chatHistory)); } catch (e) { /* ignore */ } }
+function chatBubble(m) {
+  const b = h('div', { class: 'msg ' + (m.role === 'user' ? 'user' : 'bot') });
+  if (m.lang) b.setAttribute('lang', m.lang);
+  String(m.text).split('\n').forEach((line) => b.append(h('p', { class: 'ln', text: line })));
+  if (m.role === 'bot') {
+    if (m.links && m.links.length) {
+      const src = h('div', { class: 'src', 'aria-label': t('ch_sources') });
+      m.links.forEach((id) => { const r = getRes(id); if (r) src.append(h('a', { href: r.url, target: '_blank', rel: 'noopener noreferrer', text: L10(r) + ' ↗' })); });
+      b.append(src);
+    }
+    if (m.action) {
+      const a = m.action;
+      if (a.type === 'report') b.append(h('button', { type: 'button', class: 'btn btn-sm btn-success mt-2', text: t('ch_report_btn'), onclick: () => { closeChat(); goReport(a.cat); } }));
+      if (a.type === 'detail') b.append(h('button', { type: 'button', class: 'btn btn-sm btn-success mt-2', text: t('ch_view_btn'), onclick: () => showReportDetail(a.id) }));
+      if (a.type === 'view') b.append(h('button', { type: 'button', class: 'btn btn-sm btn-success mt-2', text: t('nav_track'), onclick: () => { closeChat(); showView(a.view); } }));
+    }
+  }
+  return b;
+}
+function renderChat() {
+  const body = $('chatBody'); body.textContent = '';
+  chatHistory.forEach((m) => body.append(chatBubble(m)));
+  body.scrollTop = body.scrollHeight;
+}
+function renderSuggestions() {
+  const box = $('chatSugg'); box.textContent = '';
+  SUGGESTED.forEach((q) => box.append(h('button', { type: 'button', text: q, onclick: () => sendChat(q) })));
+}
+let chatBusy = false;
+async function sendChat(text) {
+  text = String(text || '').trim().slice(0, 300);
+  if (!text || chatBusy) return;
+  chatBusy = true; $('chatInput').value = '';
+  chatHistory.push({ role: 'user', text }); renderChat();
+  const body = $('chatBody');
+  const typing = h('div', { class: 'msg bot', id: 'typingMsg', 'aria-label': t('ch_sub') }, h('div', { class: 'typing' }, h('span'), h('span'), h('span')));
+  body.append(typing); body.scrollTop = body.scrollHeight;
+  try {
+    const [resp] = await Promise.all([askChatbot(text), new Promise((r) => setTimeout(r, 550))]);
+    chatHistory.push({ role: 'bot', lang: resp.lang, text: resp.text, links: resp.links, action: resp.action });
+  } catch (e) { chatHistory.push({ role: 'bot', lang, text: t('ch_err'), links: ['district'], action: null }); }
+  chatBusy = false; saveChat(); renderChat();
+}
+function openChat() { $('chatPanel').classList.add('open'); $('chatFab').setAttribute('aria-expanded', 'true'); $('chatInput').focus(); const b = $('chatBody'); b.scrollTop = b.scrollHeight; }
+function closeChat() { $('chatPanel').classList.remove('open'); $('chatFab').setAttribute('aria-expanded', 'false'); $('chatFab').focus(); }
+function clearChat() { chatHistory = [welcomeMsg()]; saveChat(); renderChat(); }
+function goReport(cat) { showView('report'); if (cat) { $('f-cat').value = cat; } $('f-title').focus(); }
+
+/* ======================================================================
+   16. Orchestration + events
+   ====================================================================== */
+function refreshAll() { updateDashboard(); renderMapMarkers(); renderCharts(); renderTable(); renderResources(); renderAdmin(); }
+
+function bindEvents() {
+  window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (v !== currentView) showView(v, false); });
+  $('menuBtn').addEventListener('click', () => ($('sidebar').classList.contains('open') ? closeSidebar() : openSidebar()));
+  $('overlay').addEventListener('click', closeSidebar);
+  qsa('.sidebar nav a').forEach((a) => a.addEventListener('click', () => closeSidebar()));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if ($('chatPanel').classList.contains('open')) closeChat(); closeSidebar(); } });
+  const setLang = (l) => { lang = l; try { localStorage.setItem(LS.lang, l); } catch (e) { /* ignore */ } applyLang(); rebuildOptions(); renderAwareness(); renderChat(); renderSuggestions(); $('pageName').textContent = t('page_' + currentView); refreshAll(); if ($('trackInput').value) renderTrack($('trackInput').value); };
+  $('langEn').addEventListener('click', () => setLang('en')); $('langHi').addEventListener('click', () => setLang('hi'));
+  try { if (localStorage.getItem(LS.help)) $('helpBox').hidden = true; } catch (e) { /* ignore */ }
+  $('helpClose').addEventListener('click', () => { $('helpBox').hidden = true; try { localStorage.setItem(LS.help, '1'); } catch (e) { /* ignore */ } });
+
+  ['fl-block', 'fl-cat', 'fl-status', 'fl-from', 'fl-to'].forEach((id) => $(id).addEventListener('change', onFilterChange));
+  $('fl-village').addEventListener('input', () => { clearTimeout(debounceT); debounceT = setTimeout(onFilterChange, 200); });
+  $('fl-reset').addEventListener('click', () => { ['fl-block', 'fl-cat', 'fl-status'].forEach((id) => { $(id).value = ''; }); ['fl-village', 'fl-from', 'fl-to'].forEach((id) => { $(id).value = ''; }); onFilterChange(); });
+
+  $('categoryGrid').addEventListener('click', (e) => { const b = e.target.closest('[data-report-cat]'); if (b) goReport(b.dataset.reportCat); });
+  $('tbBody').addEventListener('click', (e) => { const b = e.target.closest('[data-view-id]'); if (b) showReportDetail(b.dataset.viewId); });
+  $('tb-search').addEventListener('input', () => { tableState.search = $('tb-search').value; tableState.page = 1; renderTable(); });
+  $('btnCsv').addEventListener('click', exportReportsCSV);
+  $('btnReset').addEventListener('click', () => openModal('resetModal'));
+  $('resetConfirm').addEventListener('click', () => { closeModal('resetModal'); resetDemoData(); });
+  $('res-search').addEventListener('input', renderResources); $('res-cat').addEventListener('change', renderResources);
+
+  // Report form
+  $('f-desc').addEventListener('input', () => { $('descCount').textContent = $('f-desc').value.length + '/1000'; });
+  $('f-photo').addEventListener('change', () => {
+    const f = $('f-photo').files[0], img = $('photoPreview');
+    if (f && ['image/jpeg', 'image/png', 'image/webp'].includes(f.type) && f.size <= 2 * 1024 * 1024) { img.src = URL.createObjectURL(f); img.hidden = false; setErr('photo', ''); }
+    else { img.hidden = true; if (f) setErr('photo', f.size > 2 * 1024 * 1024 && ['image/jpeg', 'image/png', 'image/webp'].includes(f.type) ? 'v_photo_size' : 'v_photo_type'); else setErr('photo', ''); }
+  });
+  $('geoBtn').addEventListener('click', () => {
+    if (!navigator.geolocation) { setErr('loc', 'geo_fail'); return; }
+    navigator.geolocation.getCurrentPosition((p) => { $('f-lat').value = p.coords.latitude.toFixed(3); $('f-lng').value = p.coords.longitude.toFixed(3); setErr('loc', ''); }, () => setErr('loc', 'geo_fail'), { timeout: 8000 });
+  });
+  $('reportForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const d = readForm(); const errs = validateForm(d); applyErrors(errs);
+    if (Object.keys(errs).length) return;
+    pendingReport = { title: d.title, category: d.category, block: d.block, village: d.village, description: d.description, incidentDate: d.incidentDate, photoName: d.file ? d.file.name.slice(0, 80) : '', lat: d.lat, lng: d.lng, contact: d.contact, file: d.file };
+    buildPreview(pendingReport); openModal('previewModal');
+  });
+  $('previewConfirm').addEventListener('click', () => {
+    if (!pendingReport) return;
+    const rec = createReport(pendingReport);
+    closeModal('previewModal');
+    if (!rec) { toast(t('save_fail'), 'err'); return; }
+    $('doneRef').textContent = rec.id; $('doneBox').hidden = false; clearForm();
+    refreshAll(); toast(rec.id, 'ok'); $('doneBox').scrollIntoView({ block: 'center' });
+  });
+  $('formClear').addEventListener('click', clearForm);
+  $('copyRef').addEventListener('click', () => { const v = $('doneRef').textContent; if (navigator.clipboard) navigator.clipboard.writeText(v).then(() => toast(t('copied'), 'ok'), () => toast(v)); else toast(v); });
+  $('doneTrack').addEventListener('click', () => { $('trackInput').value = $('doneRef').textContent; showView('track'); renderTrack($('trackInput').value); });
+  $('doneAnother').addEventListener('click', () => { $('doneBox').hidden = true; $('f-title').focus(); });
+  $('trackForm').addEventListener('submit', (e) => { e.preventDefault(); renderTrack($('trackInput').value); });
+
+  // Admin
+  $('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if ($('ad-user').value.trim() === 'demo' && $('ad-pass').value === 'demo123') {
+      adminAuthed = true; try { sessionStorage.setItem(SS.admin, '1'); } catch (x) { /* ignore */ }
+      $('loginErr').hidden = true; $('ad-pass').value = ''; renderAdmin();
+    } else { $('loginErr').textContent = t('ad_bad'); $('loginErr').hidden = false; }
+  });
+  $('adLogout').addEventListener('click', () => { adminAuthed = false; adminSel = null; try { sessionStorage.removeItem(SS.admin); } catch (x) { /* ignore */ } renderAdmin(); });
+  $('ad-qfilter').addEventListener('change', renderAdmin);
+
+  // Chat
+  $('chatFab').addEventListener('click', () => ($('chatPanel').classList.contains('open') ? closeChat() : openChat()));
+  $('chatClose').addEventListener('click', closeChat); $('chatClear').addEventListener('click', clearChat);
+  $('chatForm').addEventListener('submit', (e) => { e.preventDefault(); sendChat($('chatInput').value); });
+}
+
+function init() {
+  try { const sl = localStorage.getItem(LS.lang); if (sl === 'hi' || sl === 'en') lang = sl; } catch (e) { /* ignore */ }
+  adminAuthed = isAdminSession();
+  loadReports();
+  try { const c = JSON.parse(sessionStorage.getItem(SS.chat) || 'null'); chatHistory = Array.isArray(c) && c.length ? c : [welcomeMsg()]; } catch (e) { chatHistory = [welcomeMsg()]; }
+  if (!libs.bs || !libs.L || !libs.Chart) { $('libWarn').textContent = t('lib_warn'); $('libWarn').hidden = false; }
+  $('f-date').max = todayISO();
+  applyLang(); rebuildOptions(); renderAwareness(); renderSuggestions(); renderChat(); bindEvents();
+  const start = location.hash.slice(1);
+  showView(VIEWS.includes(start) ? start : 'dashboard', !VIEWS.includes(start));
+  refreshAll();
+  $('loader').hidden = true;
+}
+
+// Expose the main functions for debugging / testing in the browser console.
+window.RSA = { loadReports, saveReports, createReport, getReportById, updateReportStatus, filterReports, updateDashboard, renderCharts, renderMapMarkers, getChatbotResponse, searchResources, exportReportsCSV, resetDemoData };
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+</body>
+</html>
